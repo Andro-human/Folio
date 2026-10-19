@@ -29,10 +29,10 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="bg-grain flex min-h-dvh items-center justify-center bg-background px-6">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-6">
       <div className="relative z-10 w-full max-w-sm">
         <h1 className="mb-1 text-4xl">
-          Notes<span className="text-primary">.</span>
+          Notes
         </h1>
         <p className="mb-8 text-sm text-muted-foreground">Jots, notes and tasks in one place.</p>
 
@@ -56,8 +56,8 @@ export default function AuthPage() {
             placeholder="Password"
             className="h-11 w-full rounded-md border border-border bg-card px-3 outline-none focus:border-muted-foreground/60"
           />
-          {error && <p className="text-sm text-primary">{error}</p>}
-          {info && <p className="text-sm text-gold">{info}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {info && <p className="text-sm text-primary">{info}</p>}
           <button
             type="submit"
             disabled={busy}

@@ -19,8 +19,8 @@ import { cn } from '@/lib/utils';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
-    isActive ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+    'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[14px] transition-colors',
+    isActive ? 'bg-primary/10 font-medium text-primary' : 'text-foreground/80 hover:bg-foreground/5',
   );
 
 export function Sidebar() {
@@ -45,29 +45,27 @@ export function Sidebar() {
   }, [tasks]);
 
   return (
-    <aside className="sticky top-0 z-20 hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-background/80 px-3 pb-4 pt-6 md:flex">
+    <aside className="sticky top-0 z-20 hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-card px-3 pb-4 pt-6 md:flex">
       <div className="mb-5 flex items-center justify-between px-2.5">
-        <span className="font-heading text-xl tracking-tight" style={{ fontVariationSettings: "'SOFT' 100, 'WONK' 1" }}>
-          Notes<span className="text-primary">.</span>
-        </span>
+        <span className="text-lg font-semibold tracking-tight">Notes</span>
       </div>
 
       <button
         type="button"
         onClick={() => openCapture('task')}
-        className="mb-4 flex items-center justify-between rounded-md border border-border px-2.5 py-2 text-sm text-foreground transition-colors hover:border-muted-foreground/50"
+        className="mb-4 flex items-center justify-between rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
       >
         <span className="flex items-center gap-2">
-          <Plus className="h-4 w-4 text-primary" /> Quick capture
+          <Plus className="h-4 w-4" /> Quick capture
         </span>
-        <kbd className="font-mono text-2xs text-muted-foreground">⌘K</kbd>
+        <kbd className="text-xs opacity-75">⌘K</kbd>
       </button>
 
       <nav className="space-y-0.5">
         <NavLink to="/" end className={linkClass}>
           <Sun className="h-4 w-4" />
           <span className="flex-1">Today</span>
-          {todayCount > 0 && <span className="font-mono text-2xs tabular">{todayCount}</span>}
+          {todayCount > 0 && <span className="text-xs tabular">{todayCount}</span>}
         </NavLink>
         <NavLink to="/tasks" end className={linkClass}>
           <ListTodo className="h-4 w-4" /> Tasks
@@ -91,7 +89,7 @@ export function Sidebar() {
               <NavLink key={l.id} to={`/tasks/list/${l.id}`} className={linkClass}>
                 <span className="h-2 w-2 rounded-full" style={{ background: listColorVar(l.color) }} />
                 <span className="flex-1 truncate">{l.name}</span>
-                {!!counts.get(l.id) && <span className="font-mono text-2xs tabular">{counts.get(l.id)}</span>}
+                {!!counts.get(l.id) && <span className="text-xs tabular">{counts.get(l.id)}</span>}
               </NavLink>
             ))}
           </div>
@@ -117,7 +115,7 @@ export function Sidebar() {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-1.5 px-2.5 font-mono text-2xs uppercase tracking-widest text-muted-foreground/70">
+    <div className="mb-1 px-2.5 text-xs font-semibold text-muted-foreground">
       {children}
     </div>
   );

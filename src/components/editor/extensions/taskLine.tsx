@@ -121,7 +121,7 @@ function TaskLineView({ node, editor }: ReactNodeViewProps) {
         <span contentEditable={false} className="task-line-meta">
           {deferred && <span className="chip-badge">Deferred</span>}
           {task.deadline && (
-            <span className={cn('chip-badge', overdue && 'text-primary')}>
+            <span className={cn('chip-badge', overdue && 'text-destructive')}>
               {formatDeadline(task.deadline, task.deadline_has_time)}
             </span>
           )}

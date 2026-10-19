@@ -61,7 +61,7 @@ export default function NotesPage() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    className="text-primary focus:text-primary"
+                    className="text-destructive focus:text-destructive"
                     onSelect={async () => {
                       if (!confirm(`Delete “${folder.name}”? Its pages move to Unfiled; subfolders are deleted.`)) return;
                       await deleteFolder(folder.id);
@@ -101,7 +101,7 @@ export default function NotesPage() {
             to="/jots"
             className="mb-7 flex items-center gap-3 rounded-lg border border-border bg-card/40 px-4 py-3 transition-colors hover:border-muted-foreground/40"
           >
-            <CalendarDays className="h-5 w-5 text-gold" />
+            <CalendarDays className="h-5 w-5 text-primary" />
             <div className="flex-1">
               <div>Jots</div>
               <div className="text-xs text-muted-foreground">Today · {jotTitle(todayKey())}</div>
@@ -120,7 +120,7 @@ export default function NotesPage() {
                   to={`/notes/f/${f.id}`}
                   className="flex items-center gap-2.5 rounded-lg border border-border px-3 py-3 transition-colors hover:border-muted-foreground/40"
                 >
-                  <Folder className="h-4 w-4 shrink-0 text-gold" />
+                  <Folder className="h-4 w-4 shrink-0 text-primary" />
                   <span className="truncate text-sm">{f.name}</span>
                 </Link>
               ))}
@@ -179,12 +179,12 @@ function PageItem({ page }: { page: FolderEntry }) {
       className="flex items-center gap-3 border-b border-border/60 py-3 last:border-0 hover:text-foreground"
     >
       {page.is_task ? (
-        <CheckCircle2 className={cn('h-4 w-4 shrink-0', page.task_status === 'done' ? 'text-muted-foreground' : 'text-gold')} />
+        <CheckCircle2 className={cn('h-4 w-4 shrink-0', page.task_status === 'done' ? 'text-muted-foreground' : 'text-primary')} />
       ) : (
         <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
       )}
       <span className={cn('flex-1 truncate', !page.title && 'text-muted-foreground')}>{page.title || 'Untitled'}</span>
-      <span className="shrink-0 font-mono text-2xs text-muted-foreground">{relativeDayLabel(new Date(page.updated_at))}</span>
+      <span className="shrink-0 text-xs text-muted-foreground">{relativeDayLabel(new Date(page.updated_at))}</span>
     </Link>
   );
 }

@@ -19,7 +19,7 @@ export default function JotsPage() {
         <ScreenTitle sub="One page per day">Jots</ScreenTitle>
 
         <DayHeading date={today} />
-        <div className="mb-10 rounded-lg border border-border/70 bg-card/30 px-4 py-3 md:px-5">
+        <div className="mb-10 rounded-xl bg-card px-4 py-3 md:px-5">
           {todayJot.isLoading ? (
             <div className="h-16 animate-pulse rounded bg-muted/50" />
           ) : (
@@ -54,8 +54,8 @@ export default function JotsPage() {
 function DayHeading({ date }: { date: string }) {
   return (
     <div className="mb-2 flex items-baseline gap-2">
-      <span className="font-heading text-lg">{relativeDayLabel(fromDateKey(date))}</span>
-      <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">{jotTitle(date)}</span>
+      <span className="font-semibold text-lg">{relativeDayLabel(fromDateKey(date))}</span>
+      <span className="text-xs font-medium text-muted-foreground">{jotTitle(date)}</span>
     </div>
   );
 }
@@ -65,7 +65,7 @@ function PastJot({ jot }: { jot: JotSummary }) {
   const lines = jot.content_text.split('\n').filter(Boolean);
 
   return (
-    <div className="rounded-lg border border-border/60">
+    <div className="rounded-xl bg-card">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -74,8 +74,8 @@ function PastJot({ jot }: { jot: JotSummary }) {
         <ChevronRight className={cn('mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-90')} />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <span className="font-heading">{relativeDayLabel(fromDateKey(jot.jot_date!))}</span>
-            <span className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">{jotTitle(jot.jot_date!)}</span>
+            <span className="font-semibold">{relativeDayLabel(fromDateKey(jot.jot_date!))}</span>
+            <span className="text-xs font-medium text-muted-foreground">{jotTitle(jot.jot_date!)}</span>
           </div>
           {!open && (
             <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">

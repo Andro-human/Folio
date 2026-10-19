@@ -59,7 +59,7 @@ export function MoveDialog({
               value={`folder ${folderPath(folders, f.id).map((x) => x.name).join(' / ')}`}
               onSelect={() => pick({ folderId: f.id })}
             >
-              <Folder className="mr-2 h-4 w-4 text-gold" />
+              <Folder className="mr-2 h-4 w-4 text-primary" />
               {folderPath(folders, f.id).map((x) => x.name).join(' / ')}
             </CommandItem>
           ))}

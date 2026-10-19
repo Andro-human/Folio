@@ -19,11 +19,14 @@ export function useProfile() {
   });
 }
 
-export const LIST_COLORS = ['gold', 'info', 'success', 'warning', 'primary', 'muted'] as const;
+export const LIST_COLORS = ['blue', 'green', 'orange', 'red', 'purple', 'teal', 'gray'] as const;
+
+// Names the signup trigger used before the palette existed.
+const LEGACY: Record<string, string> = { gold: 'orange', info: 'blue', success: 'green', warning: 'orange', primary: 'red', muted: 'gray' };
 
 export function listColorVar(color: string): string {
-  const known = (LIST_COLORS as readonly string[]).includes(color) ? color : 'gold';
-  return known === 'muted' ? 'hsl(var(--muted-foreground))' : `hsl(var(--${known}))`;
+  const name = LEGACY[color] ?? color;
+  return `hsl(var(--c-${(LIST_COLORS as readonly string[]).includes(name) ? name : 'gray'}))`;
 }
 
 export function useCreateList() {

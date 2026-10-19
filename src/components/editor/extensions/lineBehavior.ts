@@ -46,6 +46,19 @@ export const LineBehavior = Extension.create<LineBehaviorOptions>({
         if (!empty || $from.depth !== 1) return false;
         const node = $from.parent;
 
+        // A blank task line already waits below: step into it rather than stacking another.
+        const next = editor.state.doc.maybeChild($from.index(0) + 1);
+        if (
+          (jot || node.type.name === 'taskLine') &&
+          node.content.size > 0 &&
+          $from.parentOffset === node.content.size &&
+          next?.type.name === 'taskLine' &&
+          next.content.size === 0 &&
+          !next.attrs.taskId
+        ) {
+          return editor.commands.setTextSelection($from.after(1) + 1);
+        }
+
         if (node.type.name === 'taskLine') {
           if (node.content.size === 0) return editor.commands.setNode('paragraph', { indent: 0 });
           return editor.chain().splitBlock({ keepMarks: false }).setNode('taskLine', { taskId: null }).run();

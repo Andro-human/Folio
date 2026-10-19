@@ -43,7 +43,7 @@ export function QuickTaskInput({
   };
 
   return (
-    <div className="mb-2 rounded-lg border border-border bg-card/40 focus-within:border-muted-foreground/50">
+    <div className="mb-2 rounded-xl bg-muted/70 ring-primary/40 focus-within:ring-2">
       <div className="flex items-center gap-2.5 px-3">
         <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
         <input
@@ -61,7 +61,7 @@ export function QuickTaskInput({
         />
       </div>
       {parsed && (parsed.deadline || parsed.priority || parsedList || parsed.rrule) && (
-        <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-border/60 px-3 py-1.5 font-mono text-2xs text-muted-foreground">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 px-3 pb-2 text-xs text-muted-foreground">
           {parsed.deadline && (
             <span className="inline-flex items-center gap-1 text-foreground">
               <CalendarClock className="h-3 w-3" />

@@ -82,7 +82,7 @@ function ListRail({ lists }: { lists: ListRow[] }) {
         to="/tasks"
         end
         className={({ isActive }) =>
-          cn('shrink-0 rounded-full border px-3 py-1 text-sm', isActive ? 'border-foreground/40 bg-muted' : 'border-border text-muted-foreground')
+          cn('shrink-0 rounded-full px-3 py-1 text-sm', isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground/80')
         }
       >
         All
@@ -93,8 +93,8 @@ function ListRail({ lists }: { lists: ListRow[] }) {
           to={`/tasks/list/${l.id}`}
           className={({ isActive }) =>
             cn(
-              'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-sm',
-              isActive ? 'border-foreground/40 bg-muted' : 'border-border text-muted-foreground',
+              'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm',
+              isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground/80',
             )
           }
         >
@@ -155,7 +155,7 @@ function UpcomingView({ listById }: { listById: Map<string, ListRow> }) {
       {groups.overdue.length > 0 && (
         <section>
           <SectionTitle>
-            <span className="text-primary">Overdue</span>
+            <span className="text-destructive">Overdue</span>
           </SectionTitle>
           <Rows tasks={groups.overdue} listById={listById} />
         </section>
@@ -247,7 +247,7 @@ function ListView({ list, listById }: { list: ListRow; listById: Map<string, Lis
         <button
           type="button"
           onClick={() => setShowDone((s) => !s)}
-          className="inline-flex items-center gap-1 font-mono text-2xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           <ChevronDown className={cn('h-3 w-3 transition-transform', !showDone && '-rotate-90')} />
           Completed

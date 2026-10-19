@@ -131,7 +131,7 @@ function PageScreen({ page }: { page: FullPage }) {
               {!isJot && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-primary focus:text-primary" onSelect={() => void remove()}>
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => void remove()}>
                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                   </DropdownMenuItem>
                 </>
@@ -175,7 +175,7 @@ function PageScreen({ page }: { page: FullPage }) {
         {page.deleted_at && (
           <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-muted/50 px-3 py-2 text-sm">
             <span>This page is in the trash.</span>
-            <button type="button" onClick={() => void restorePage(page.id)} className="inline-flex items-center gap-1 text-gold">
+            <button type="button" onClick={() => void restorePage(page.id)} className="inline-flex items-center gap-1 text-primary">
               <Undo2 className="h-3.5 w-3.5" /> Restore
             </button>
           </div>
@@ -233,7 +233,7 @@ function PageLinks({ pages }: { pages: PageSummary[] }) {
           to={`/p/${p.id}`}
           className="flex items-center gap-2.5 rounded-md px-2 py-2 text-sm text-foreground/90 hover:bg-muted"
         >
-          {p.jot_date ? <CalendarDays className="h-4 w-4 text-gold" /> : <FileText className="h-4 w-4 text-muted-foreground" />}
+          {p.jot_date ? <CalendarDays className="h-4 w-4 text-primary" /> : <FileText className="h-4 w-4 text-muted-foreground" />}
           <span className="truncate">{p.jot_date ? jotTitle(p.jot_date) : p.title || 'Untitled'}</span>
         </Link>
       ))}

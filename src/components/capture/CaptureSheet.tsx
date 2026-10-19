@@ -139,7 +139,7 @@ function CaptureForm({ initialKind, onDone }: { initialKind: CaptureKind; onDone
         className="w-full resize-none bg-transparent text-[17px] leading-relaxed outline-none placeholder:text-muted-foreground/60"
       />
 
-      <div className="flex min-h-[1.25rem] flex-wrap gap-x-3 gap-y-1 font-mono text-2xs text-muted-foreground">
+      <div className="flex min-h-[1.25rem] flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
         {parsed?.deadline && (
           <span className="inline-flex items-center gap-1 text-foreground">
             <CalendarClock className="h-3 w-3" />
@@ -169,7 +169,7 @@ function CaptureForm({ initialKind, onDone }: { initialKind: CaptureKind; onDone
       </div>
 
       <div className="mt-3 flex items-center justify-end gap-2">
-        <span className="mr-auto hidden font-mono text-2xs text-muted-foreground md:inline">
+        <span className="mr-auto hidden text-xs text-muted-foreground md:inline">
           {kind === 'task' ? '↵ to save' : '⌘↵ to save'}
         </span>
         <button

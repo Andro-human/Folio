@@ -36,15 +36,15 @@ export default function TodayPage() {
       />
       <PageBody>
         <div className="mb-7 mt-1 md:mt-12">
-          <p className="font-mono text-2xs uppercase tracking-widest text-muted-foreground">{format(now, 'd MMMM yyyy')}</p>
-          <h1 className="text-[2.4rem] leading-tight md:text-[3rem]">{format(now, 'EEEE')}</h1>
+          <h1 className="text-[2.125rem] font-bold leading-tight md:text-[2.5rem]">Today</h1>
+          <p className="text-[15px] text-muted-foreground">{format(now, 'EEEE, d MMMM')}</p>
         </div>
 
         <section className="mb-9">
           {groups.overdue.length > 0 && (
             <div className="mb-5">
               <SectionTitle>
-                <span className="text-primary">Overdue · {groups.overdue.length}</span>
+                <span className="text-destructive">Overdue · {groups.overdue.length}</span>
               </SectionTitle>
               <AnimatePresence initial={false}>
                 {groups.overdue.map((t) => (
@@ -54,7 +54,7 @@ export default function TodayPage() {
             </div>
           )}
 
-          <SectionTitle right={<Link to="/tasks" className="font-mono text-2xs uppercase tracking-widest text-muted-foreground hover:text-foreground">All tasks →</Link>}>
+          <SectionTitle right={<Link to="/tasks" className="text-[13px] text-primary">All tasks</Link>}>
             Due today{today.length ? ` · ${today.length}` : ''}
           </SectionTitle>
           <QuickTaskInput defaultDeadline={dateOnlyToISO(now)} placeholder="Add a task for today…" />
@@ -69,14 +69,14 @@ export default function TodayPage() {
         <section>
           <SectionTitle
             right={
-              <Link to="/jots" className="font-mono text-2xs uppercase tracking-widest text-muted-foreground hover:text-foreground">
-                Past jots →
+              <Link to="/jots" className="text-[13px] text-primary">
+                Past jots
               </Link>
             }
           >
             Today’s jot
           </SectionTitle>
-          <div className="rounded-lg border border-border/70 bg-card/30 px-4 py-3 md:px-5 md:py-4">
+          <div className="rounded-xl bg-card px-4 py-3 md:px-5 md:py-4">
             {jot.isLoading ? (
               <div className="h-16 animate-pulse rounded bg-muted/50" />
             ) : (

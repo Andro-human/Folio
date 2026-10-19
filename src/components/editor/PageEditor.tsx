@@ -287,7 +287,8 @@ function EditorInner({
     extensions: [
       StarterKit.configure({
         link: { openOnClick: false, autolink: true },
-        trailingNode: { node: mode === 'jot' ? 'taskLine' : 'paragraph' },
+        trailingNode:
+          mode === 'jot' ? { node: 'taskLine', notAfter: ['paragraph'] } : { node: 'paragraph' },
       }),
       Placeholder.configure({
         showOnlyCurrent: true,
@@ -519,8 +520,7 @@ function TitleField({
           onEnter();
         }
       }}
-      className="mb-3 w-full resize-none overflow-hidden bg-transparent font-heading text-[2rem] leading-tight tracking-tight outline-none placeholder:text-muted-foreground/50 md:text-[2.4rem]"
-      style={{ fontVariationSettings: "'SOFT' 100, 'WONK' 1" }}
+      className="mb-3 w-full resize-none overflow-hidden bg-transparent text-[1.875rem] font-bold leading-tight tracking-tight outline-none placeholder:text-muted-foreground/50 md:text-[2.25rem]"
     />
   );
 }
@@ -531,8 +531,8 @@ function SaveIndicator({ status }: { status: SaveStatus }) {
   return (
     <div
       className={cn(
-        'pointer-events-none mt-6 select-none font-mono text-2xs uppercase tracking-widest transition-opacity',
-        status === 'error' ? 'text-primary' : 'text-muted-foreground/60',
+        'pointer-events-none mt-6 select-none text-xs font-medium transition-opacity',
+        status === 'error' ? 'text-destructive' : 'text-muted-foreground/60',
         status === 'saved' && 'opacity-60',
       )}
       aria-live="polite"

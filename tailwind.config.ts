@@ -41,10 +41,6 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        gold: {
-          DEFAULT: "hsl(var(--gold))",
-          foreground: "hsl(var(--gold-foreground))",
-        },
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
         info: "hsl(var(--info))",
@@ -58,9 +54,8 @@ export default {
         "2xs": ["0.625rem", { lineHeight: "0.9rem" }],
       },
       fontFamily: {
-        sans: ["Satoshi", "system-ui", "sans-serif"],
-        heading: ["Fraunces", "Georgia", "serif"],
-        mono: ["IBM Plex Mono", "ui-monospace", "monospace"],
+        sans: ["-apple-system", "BlinkMacSystemFont", '"SF Pro Text"', "Inter", '"Segoe UI"', "Roboto", "system-ui", "sans-serif"],
+        mono: ["ui-monospace", '"SF Mono"', "Menlo", "monospace"],
       },
     },
   },

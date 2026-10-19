@@ -19,8 +19,8 @@ export default defineConfig({
         description: "Notes, jots and tasks",
         start_url: "/",
         display: "standalone",
-        background_color: "#151210",
-        theme_color: "#151210",
+        background_color: "#111113",
+        theme_color: "#111113",
         icons: [
           { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
@@ -31,24 +31,6 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: "/index.html",
         // App data is never cached: the server is the only copy (PLAN §6).
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts",
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/(api|cdn)\.fontshare\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "fontshare",
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
-          },
-        ],
       },
       devOptions: { enabled: false },
     }),

@@ -61,7 +61,7 @@ export function TaskProperties({ task }: { task: TaskRow }) {
       </Chip>
 
       <Chip
-        icon={<Flag className={cn('h-3.5 w-3.5', task.priority === 'high' && 'text-primary')} />}
+        icon={<Flag className={cn('h-3.5 w-3.5', task.priority === 'high' && 'text-destructive')} />}
         label={PRIORITIES.find((p) => p.value === task.priority)?.label ?? 'Medium'}
         active={task.priority !== 'medium'}
       >
@@ -185,8 +185,8 @@ function DeadlineChip({ task }: { task: TaskRow }) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button type="button" className={chipClass(!!task.deadline)}>
-          <CalendarClock className={cn('h-3.5 w-3.5', overdue && 'text-primary')} />
-          <span className={cn(overdue && 'text-primary')}>
+          <CalendarClock className={cn('h-3.5 w-3.5', overdue && 'text-destructive')} />
+          <span className={cn(overdue && 'text-destructive')}>
             {task.deadline ? formatDeadline(task.deadline, task.deadline_has_time) : 'Deadline'}
           </span>
         </button>
@@ -308,7 +308,7 @@ function MenuRow({
       className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
     >
       <span className="flex flex-1 items-center gap-2">{children}</span>
-      {selected && <Check className="h-3.5 w-3.5 text-gold" />}
+      {selected && <Check className="h-3.5 w-3.5 text-primary" />}
     </button>
   );
 }

@@ -264,7 +264,13 @@ Offline, the app still opens, and new notes and tasks can still be created. Exis
 
 ### Design
 
-Start from MT-Wallet's DESIGN.md tokens ("Bahi-Khata Noir": Fraunces / Satoshi / IBM Plex Mono, ink-on-paper palette, night + day themes). Drop the finance-specific rules. See §12.
+Clean & minimal (Things 3 / Apple Notes territory), its own identity, nothing from MT-Wallet:
+
+- **Type:** the system font stack, which is SF Pro on iPhone and Mac. Large bold screen titles, 17px body.
+- **Colour:** white (light) or near-black (dark) surfaces, light grey cards, one blue accent. Red only for overdue, high priority and destructive actions.
+- **List colours:** a fixed palette (blue, green, orange, red, purple, teal, gray).
+- **Phone layout:** iOS-style tab bar plus a floating + button.
+- **Tokens:** all in `src/index.css`.
 
 ---
 
@@ -415,7 +421,7 @@ Each phase is usable on its own. **Switch over after phase 2.**
 1. **Deferred:** status (recommended) or priority?
 2. **Priority levels:** High / Medium / Low, or just High / Low?
 3. **Task statuses:** To do / Deferred / Done enough, or add In progress?
-4. **Design:** reuse Bahi-Khata Noir, or a new identity for this app?
+4. ~~Design~~ **Decided:** clean & minimal, own identity (see §6 Design).
 5. **Name:** the app and the GitHub repo name.
 6. **Commit email:** GitHub noreply (`95043753+Andro-human@users.noreply.github.com`) or a personal address?
 7. ~~Task trigger in the editor~~ **Decided:**

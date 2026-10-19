@@ -36,12 +36,12 @@ export function TaskCheck({
         'grid shrink-0 place-items-center rounded-full border-[1.5px] transition-colors',
         size === 'lg' ? 'h-6 w-6' : 'h-[18px] w-[18px]',
         done
-          ? 'border-muted-foreground bg-muted-foreground text-background'
+          ? 'border-primary bg-primary text-primary-foreground'
           : task.priority === 'high'
-            ? 'border-primary hover:bg-primary/15'
+            ? 'border-destructive hover:bg-destructive/10'
             : task.priority === 'low'
               ? 'border-muted-foreground/55 hover:bg-muted'
-              : 'border-foreground/55 hover:bg-muted',
+              : 'border-muted-foreground/80 hover:bg-muted',
       )}
     >
       {done && (
@@ -82,9 +82,9 @@ export function TaskRow({
         <div className={cn('leading-snug', done && 'text-muted-foreground line-through decoration-muted-foreground/60')}>
           {task.page.title || <span className="text-muted-foreground">Untitled task</span>}
         </div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-mono text-2xs text-muted-foreground">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-muted-foreground">
           {task.deadline && (
-            <span className={cn('inline-flex items-center gap-1', overdue && 'text-primary')}>
+            <span className={cn('inline-flex items-center gap-1', overdue && 'text-destructive')}>
               <CalendarClock className="h-3 w-3" />
               {formatDeadline(task.deadline, task.deadline_has_time)}
             </span>

@@ -67,7 +67,7 @@ function SubPageView({ node, selected }: ReactNodeViewProps) {
           selected ? 'border-ring' : 'border-border'
         } ${gone ? 'opacity-50' : ''}`}
       >
-        <FileText className="h-4 w-4 shrink-0 text-gold" />
+        <FileText className="h-4 w-4 shrink-0 text-primary" />
         <span className="truncate underline decoration-border underline-offset-4">
           {gone ? 'Deleted page' : page?.title || 'Untitled'}
         </span>

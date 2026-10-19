@@ -8,8 +8,8 @@ export type PaperTheme = 'night' | 'day';
 const STORAGE_KEY = 'notes-theme';
 const CHANGE_EVENT = 'notes-theme-change';
 const THEME_COLOR: Record<PaperTheme, string> = {
-  night: '#151210',
-  day: '#F6F0E4',
+  night: '#111113',
+  day: '#FFFFFF',
 };
 
 const prefersLight = () =>

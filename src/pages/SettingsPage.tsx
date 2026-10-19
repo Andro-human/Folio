@@ -9,8 +9,8 @@ import { useCreateList, useDeleteList, useLists, useUpdateList, listColorVar, LI
 import { cn } from '@/lib/utils';
 
 const THEMES: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
-  { value: 'night', label: 'Night', icon: Moon },
-  { value: 'day', label: 'Day', icon: Sun },
+  { value: 'night', label: 'Dark', icon: Moon },
+  { value: 'day', label: 'Light', icon: Sun },
   { value: 'system', label: 'System', icon: SunMoon },
 ];
 
@@ -82,7 +82,7 @@ export default function SettingsPage() {
                     if (!confirm(`Delete the list “${l.name}”? Its tasks stay, without a list.`)) return;
                     deleteList.mutate(l.id, { onError: () => toast.error("Couldn't delete the list") });
                   }}
-                  className="text-muted-foreground hover:text-primary"
+                  className="text-muted-foreground hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

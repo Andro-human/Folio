@@ -40,7 +40,7 @@ export function AppShell() {
 
   return (
     <CaptureContext.Provider value={ctx}>
-      <div className="bg-grain min-h-dvh bg-background md:flex">
+      <div className="min-h-dvh bg-background md:flex">
         <Sidebar />
         <main className="relative z-10 min-w-0 flex-1 pb-32 md:pb-16">
           <OfflineBanner />
