@@ -12,7 +12,7 @@ const items = [
     to: '/notes',
     icon: NotebookPen,
     label: 'Notes',
-    match: (p: string) => p.startsWith('/notes') || p.startsWith('/jots') || p.startsWith('/p/'),
+    match: (p: string) => p.startsWith('/notes') || p.startsWith('/jots'),
   },
   { to: '/search', icon: Search, label: 'Search', match: (p: string) => p.startsWith('/search') },
 ];

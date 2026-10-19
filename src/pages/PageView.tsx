@@ -182,9 +182,13 @@ function PageScreen({ page }: { page: FullPage }) {
         )}
 
         {isJot && <h1 className="mb-5 text-[2rem] leading-tight md:text-[2.4rem]">{jotTitle(page.jot_date!)}</h1>}
-        {page.task && <TaskProperties task={page.task} />}
-
-        <PageEditor page={page} mode={isJot ? 'jot' : 'page'} jotDate={page.jot_date ?? undefined} autoFocus={!page.title && !isJot} />
+        <PageEditor
+          page={page}
+          mode={isJot ? 'jot' : 'page'}
+          jotDate={page.jot_date ?? undefined}
+          autoFocus={!page.title && !isJot}
+          belowTitle={page.task && <TaskProperties task={page.task} />}
+        />
 
         <ChildPages pageId={page.id} content={page.content} />
         <Backlinks pageId={page.id} />

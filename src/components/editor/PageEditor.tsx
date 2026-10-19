@@ -39,6 +39,8 @@ interface PageEditorProps {
   jotDate?: string;
   autoFocus?: boolean;
   className?: string;
+  /** Rendered between the title and the body, e.g. a task's properties. */
+  belowTitle?: React.ReactNode;
 }
 
 /** Loads the tasks referenced by chips before mounting, so chips render with real titles. */
@@ -105,6 +107,7 @@ function EditorInner({
   jotDate,
   autoFocus,
   className,
+  belowTitle,
   initialDoc,
   taskMap,
   lists,
@@ -215,9 +218,19 @@ function EditorInner({
       const node = editor.state.doc.nodeAt(pos);
       if (!node || node.type.name !== 'taskLine') return;
       const text = node.textContent.trim();
-      if (!text) return;
-
       const existing = node.attrs.taskId as string | null;
+
+      if (!text) {
+        // An emptied chip means the task was deleted; the next save trashes it.
+        if (existing) {
+          const tr = editor.state.tr;
+          if (editor.state.doc.childCount > 1) tr.delete(pos, pos + node.nodeSize);
+          else tr.setNodeMarkup(pos, undefined, { ...node.attrs, taskId: null });
+          editor.view.dispatch(tr);
+        }
+        return;
+      }
+
       if (existing) {
         const task = tasksRef.current.get(existing);
         if (task && task.page.title !== text) {
@@ -294,7 +307,7 @@ function EditorInner({
       SubPage,
     ],
     content: initialDoc,
-    autofocus: autoFocus ? 'end' : false,
+    autofocus: autoFocus && mode === 'jot' ? 'end' : false,
     editorProps: {
       attributes: { 'data-mode': mode, spellcheck: 'true' },
       handleDOMEvents: {
@@ -378,11 +391,15 @@ function EditorInner({
   useEffect(() => {
     if (!editor || !page || !target.current || page.id !== target.current.id) return;
     if (page.version > target.current.version && !dirty.current && !inFlight.current) {
-      editor.commands.setContent(
-        reconcileTaskTitles((page.content as JSONContent) ?? EMPTY_PAGE_DOC, (id) => tasksRef.current.get(id)?.page.title),
-        { emitUpdate: false },
-      );
       target.current.version = page.version;
+      // Node views flush synchronously; swapping content mid-render warns and can drop updates.
+      queueMicrotask(() => {
+        if (editor.isDestroyed) return;
+        editor.commands.setContent(
+          reconcileTaskTitles((page.content as JSONContent) ?? EMPTY_PAGE_DOC, (id) => tasksRef.current.get(id)?.page.title),
+          { emitUpdate: false },
+        );
+      });
       if (mode === 'page') {
         setTitle(page.title);
         titleRef.current = page.title;
@@ -453,8 +470,10 @@ function EditorInner({
               schedule();
             }}
             onEnter={() => editor?.commands.focus('start')}
+            autoFocus={autoFocus}
           />
         )}
+        {belowTitle}
 
         <EditorContent editor={editor} className={cn('editor-root', mode === 'jot' && 'is-jot')} />
 
@@ -469,12 +488,18 @@ function TitleField({
   value,
   onChange,
   onEnter,
+  autoFocus,
 }: {
   value: string;
   onChange: (v: string) => void;
   onEnter: () => void;
+  autoFocus?: boolean;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (autoFocus) ref.current?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;

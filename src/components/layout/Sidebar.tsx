@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   CalendarDays,
   ChevronRight,
@@ -125,7 +125,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function FolderItem({ node }: { node: FolderNode }) {
   const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
   return (
     <div>
       <div className="flex items-center">
@@ -138,11 +137,7 @@ function FolderItem({ node }: { node: FolderNode }) {
         >
           <ChevronRight className={cn('h-3 w-3 transition-transform', open && 'rotate-90')} />
         </button>
-        <NavLink
-          to={`/notes/f/${node.id}`}
-          className={(s) => cn(linkClass(s), 'flex-1 pl-1')}
-          onDoubleClick={() => navigate(`/notes/f/${node.id}`)}
-        >
+        <NavLink to={`/notes/f/${node.id}`} className={(s) => cn(linkClass(s), 'flex-1 pl-1')}>
           <Folder className="h-3.5 w-3.5" />
           <span className="truncate">{node.name}</span>
         </NavLink>

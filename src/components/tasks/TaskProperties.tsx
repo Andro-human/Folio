@@ -34,7 +34,7 @@ export function TaskProperties({ task }: { task: TaskRow }) {
   const list = lists.find((l) => l.id === task.list_id);
 
   return (
-    <div className="mb-5 flex flex-wrap items-center gap-2">
+    <div className="mb-6 flex flex-wrap items-center gap-2">
       <div className="mr-1 flex items-center">
         <TaskCheck task={task} size="lg" />
       </div>

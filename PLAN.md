@@ -61,7 +61,7 @@ A jot is a page tied to a calendar day: the default place to write things down w
   - The task shows "Created in: Mon 19 Oct" in its backlinks.
   - Empty lines never create tasks. The page is created when you leave the line, not on each keystroke.
 - **Plain notes in a jot (thoughts, not to-dos):**
-  - Start the line with `- `, or tap the line's marker to toggle it to a note. It's shown with a dash instead of a checkbox.
+  - Start the line with `- `, or use the Task/Note button in the keyboard toolbar (`/note` on desktop). It's shown with a dash instead of a checkbox. Tapping a task's circle completes it.
   - **Indented lines under a task are notes,** so a task can have context written beneath it without creating sub-tasks.
   - Toggling task → note deletes the task page, after confirming if the task has a body or sub-pages. Toggling note → task creates one.
 - **Regular (non-jot) pages work the other way around:**

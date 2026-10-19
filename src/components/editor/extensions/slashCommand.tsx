@@ -161,9 +161,20 @@ export const SlashCommand = Extension.create<SlashOptions>({
         allowSpaces: false,
         items: ({ query }) => {
           const q = query.toLowerCase();
-          return all.filter(
-            (i) => i.label.toLowerCase().includes(q) || i.keywords?.includes(q),
-          );
+          if (!q) return all;
+          const rank = (i: SlashItem) => {
+            const label = i.label.toLowerCase();
+            if (label.startsWith(q)) return 0;
+            if (label.split(/\s+/).some((w) => w.startsWith(q))) return 1;
+            if (label.includes(q)) return 2;
+            if (i.keywords?.split(' ').some((k) => k.startsWith(q))) return 3;
+            return 9;
+          };
+          return all
+            .map((i) => ({ i, r: rank(i) }))
+            .filter((x) => x.r < 9)
+            .sort((a, b) => a.r - b.r)
+            .map((x) => x.i);
         },
         command: ({ editor, range, props }) => props.run(editor, range),
         render: suggestionRender<SlashItem>(),
