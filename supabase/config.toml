@@ -1,0 +1,5 @@
+project_id = "note-taker"
+
+[functions.api]
+# The function authenticates callers itself: personal API tokens, not Supabase JWTs.
+verify_jwt = false

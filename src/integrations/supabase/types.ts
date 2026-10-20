@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+          scope: Database["public"]["Enums"]["token_scope"]
+          token_hash: string
+          token_hint: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name: string
+          revoked_at?: string | null
+          scope?: Database["public"]["Enums"]["token_scope"]
+          token_hash: string
+          token_hint: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          scope?: Database["public"]["Enums"]["token_scope"]
+          token_hash?: string
+          token_hint?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       folders: {
         Row: {
           created_at: string
@@ -373,6 +409,7 @@ export type Database = {
     Enums: {
       task_priority: "high" | "medium" | "low"
       task_status: "todo" | "deferred" | "done"
+      token_scope: "capture" | "mcp"
     }
     CompositeTypes: {
       [_ in never]: never

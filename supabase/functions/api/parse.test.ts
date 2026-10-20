@@ -1,0 +1,56 @@
+import { describe, expect, it } from 'vitest';
+import { basicParse, deadlineUtc } from './parse.ts';
+import { describeDeadline, jotTitle, localToUtc, zoned } from './time.ts';
+
+const tz = 'Asia/Kolkata';
+const lists = [
+  { id: 'p', name: 'Personal' },
+  { id: 'w', name: 'Work' },
+  { id: 'e', name: 'Errands' },
+];
+// Mon 19 Oct 2026, 23:30 IST — already Tuesday in some zones, still Monday in UTC (18:00).
+const now = new Date('2026-10-19T18:00:00Z');
+
+describe('time helpers', () => {
+  it('reads the wall clock in the user zone', () => {
+    expect(zoned(now, tz)).toMatchObject({ date: '2026-10-19', time: '23:30', weekday: 'Mon', offset: 330 });
+  });
+
+  it('converts IST wall time to UTC', () => {
+    expect(localToUtc('2026-10-20', '17:00', tz)).toBe('2026-10-20T11:30:00.000Z');
+    expect(localToUtc('2026-10-23', null, tz)).toBe('2026-10-22T18:30:00.000Z');
+  });
+
+  it('formats jot titles and spoken deadlines', () => {
+    expect(jotTitle('2026-10-20')).toBe('Tue, 20 Oct 2026');
+    expect(describeDeadline('2026-10-20', '17:00', '2026-10-19')).toBe('tomorrow, 5:00 pm');
+    expect(describeDeadline('2026-10-23', null, '2026-10-19')).toBe('Fri');
+  });
+});
+
+describe('basicParse (server, zone-aware)', () => {
+  it('resolves "tomorrow 5pm" in IST, not UTC', () => {
+    const c = basicParse('call the bank tomorrow 5pm #work !high', 'task', lists, now, tz);
+    expect(c).toMatchObject({ title: 'call the bank', listId: 'w', priority: 'high', date: '2026-10-20', time: '17:00' });
+    expect(deadlineUtc(c, tz)).toBe('2026-10-20T11:30:00.000Z');
+  });
+
+  it('keeps date-only deadlines as IST midnight', () => {
+    const c = basicParse('pay rent friday', 'task', lists, now, tz);
+    expect(c).toMatchObject({ title: 'pay rent', date: '2026-10-23' });
+    expect(c.time).toBeUndefined();
+    expect(deadlineUtc(c, tz)).toBe('2026-10-22T18:30:00.000Z');
+  });
+
+  it('turns "every monday" into a weekly repeat starting on the next monday', () => {
+    const c = basicParse('water plants every monday', 'task', lists, now, tz);
+    expect(c).toMatchObject({ title: 'water plants', rrule: 'FREQ=WEEKLY;BYDAY=MO', date: '2026-10-19' });
+  });
+
+  it('passes notes through untouched', () => {
+    expect(basicParse('idea: tomorrow is a good day', 'note', lists, now, tz)).toMatchObject({
+      kind: 'note',
+      title: 'idea: tomorrow is a good day',
+    });
+  });
+});
