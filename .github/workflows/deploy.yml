@@ -1,0 +1,42 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Check deploy secrets
+        run: |
+          for s in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!s}" ]; then echo "::error::Missing repository secret $s"; exit 1; fi
+          done
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Pull Vercel production settings
+        run: npx vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Build
+        run: npx vercel@latest build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy
+        run: npx vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
