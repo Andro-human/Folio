@@ -38,7 +38,7 @@ export function QuickTaskInput({
       });
     } catch {
       setText(draft);
-      toast.error("Couldn't add the task");
+      toast.error(navigator.onLine ? "Couldn't add the task" : 'You’re offline — use the + button, it saves offline');
     }
   };
 

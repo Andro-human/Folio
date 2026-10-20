@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
-import { OfflineBanner } from './OfflineBanner';
+import { OfflineBanner, useOutboxSync } from './OfflineBanner';
+import { OfflineScreen } from './OfflineScreen';
 import { CaptureContext, type CaptureKind } from './capture';
 import { CaptureSheet } from '@/components/capture/CaptureSheet';
 
@@ -17,6 +18,19 @@ export function AppShell() {
   }, []);
   const ctx = useMemo(() => ({ openCapture }), [openCapture]);
   const { pathname } = useLocation();
+  useOutboxSync();
+
+  // A screen already open when the connection drops keeps its content (and its
+  // editor keeps retrying saves); one opened while offline has nothing to show.
+  const [offlineHere, setOfflineHere] = useState(() => !navigator.onLine);
+  useEffect(() => {
+    setOfflineHere(!navigator.onLine);
+  }, [pathname]);
+  useEffect(() => {
+    const onOnline = () => setOfflineHere(false);
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -44,7 +58,7 @@ export function AppShell() {
         <Sidebar />
         <main className="relative z-10 min-w-0 flex-1 pb-32 md:pb-16">
           <OfflineBanner />
-          <Outlet />
+          {offlineHere ? <OfflineScreen /> : <Outlet />}
         </main>
         <BottomNav />
       </div>

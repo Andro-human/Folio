@@ -32,6 +32,13 @@ export const LineBehavior = Extension.create<LineBehaviorOptions>({
             parseHTML: (el) => Number(el.getAttribute('data-indent') ?? 0) || 0,
             renderHTML: (attrs) => (attrs.indent ? { 'data-indent': String(attrs.indent) } : {}),
           },
+          // Set on lines appended by quick capture, so a retried sync can tell it already landed.
+          captureId: {
+            default: null,
+            keepOnSplit: false,
+            parseHTML: (el) => el.getAttribute('data-capture-id'),
+            renderHTML: (attrs) => (attrs.captureId ? { 'data-capture-id': attrs.captureId } : {}),
+          },
         },
       },
     ];

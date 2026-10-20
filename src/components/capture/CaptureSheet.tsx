@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { format } from 'date-fns';
 import { CalendarClock, CheckCircle2, Flag, Minus, Repeat } from 'lucide-react';
 import { toast } from 'sonner';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
@@ -7,10 +6,9 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { parseQuickTask } from '@/lib/quickSyntax';
 import { describeRRule } from '@/lib/recurrence';
-import { formatDeadline, jotTitle, todayKey } from '@/lib/dates';
+import { formatDeadline } from '@/lib/dates';
 import { useLists, listColorVar } from '@/data/lists';
-import { createTask } from '@/data/tasks';
-import { appendToJot, ensureJot } from '@/data/pages';
+import { enqueueCapture, flushOutbox, isPending } from '@/data/outbox';
 import type { CaptureKind } from '@/components/layout/capture';
 import { cn } from '@/lib/utils';
 
@@ -66,39 +64,12 @@ function CaptureForm({ initialKind, onDone }: { initialKind: CaptureKind; onDone
     const raw = text.trim();
     if (!raw || busy) return;
     setBusy(true);
-    const date = todayKey();
-    const title = jotTitle(date);
-    try {
-      if (kind === 'task' && parsed) {
-        const jot = await ensureJot(date, title);
-        const id = await createTask({
-          title: parsed.title,
-          listId: parsed.listId,
-          priority: parsed.priority,
-          deadline: parsed.deadline ?? null,
-          deadlineHasTime: parsed.deadlineHasTime,
-          rrule: parsed.rrule ?? null,
-          originPageId: jot.id,
-        });
-        await appendToJot(date, title, {
-          type: 'taskLine',
-          attrs: { taskId: id },
-          content: [{ type: 'text', text: parsed.title }],
-        });
-        toast('Task added to today');
-      } else {
-        await appendToJot(date, title, {
-          type: 'paragraph',
-          attrs: { indent: 0 },
-          content: [{ type: 'text', text: `${format(new Date(), 'HH:mm')} — ${raw}` }],
-        });
-        toast('Noted in today’s jot');
-      }
-      onDone();
-    } catch {
-      toast.error("Couldn't save — check your connection");
-      setBusy(false);
-    }
+    const item = await enqueueCapture(kind, raw);
+    onDone();
+    await flushOutbox();
+    if (!isPending(item.id)) toast(kind === 'task' ? 'Task added to today' : 'Noted in today’s jot');
+    else if (!navigator.onLine) toast('Saved offline — it’ll sync when you’re back online');
+    else toast('Saved — it’ll sync shortly');
   };
 
   return (

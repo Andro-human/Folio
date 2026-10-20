@@ -2,13 +2,18 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { keys, queryClient, supabase, unwrap, unwrapOne } from './client';
 import type { ListRow } from './types';
 
+const listsQuery = {
+  queryKey: keys.lists,
+  queryFn: async () => unwrap(await supabase.from('lists').select('*').order('position')) as ListRow[],
+  staleTime: 5 * 60_000,
+};
+
 export function useLists() {
-  return useQuery({
-    queryKey: keys.lists,
-    queryFn: async () =>
-      unwrap(await supabase.from('lists').select('*').order('position')) as ListRow[],
-    staleTime: 5 * 60_000,
-  });
+  return useQuery(listsQuery);
+}
+
+export function fetchLists(): Promise<ListRow[]> {
+  return queryClient.fetchQuery(listsQuery);
 }
 
 export function useProfile() {

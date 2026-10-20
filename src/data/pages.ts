@@ -240,8 +240,21 @@ export function useJotsFeed() {
   });
 }
 
+const isSameCapture = (n: JSONContent, line: JSONContent) =>
+  (!!line.attrs?.taskId && n.attrs?.taskId === line.attrs.taskId) ||
+  (!!line.attrs?.captureId && n.attrs?.captureId === line.attrs.captureId);
+
 const isBlankLine = (n: JSONContent) =>
   (n.type === 'taskLine' || n.type === 'paragraph') && !n.content?.length && !n.attrs?.taskId;
+
+/** The doc with `line` added at the end, or null when that capture is already in it. */
+export function withAppendedLine(doc: JSONContent | null, line: JSONContent): JSONContent | null {
+  const content = [...(doc?.content ?? [])];
+  if (content.some((n) => isSameCapture(n, line))) return null;
+  while (content.length && isBlankLine(content[content.length - 1])) content.pop();
+  content.push(line);
+  return { ...(doc ?? {}), type: 'doc', content };
+}
 
 /**
  * Appends a line to a day's jot, server copy first. Retries once if the jot moved
@@ -251,11 +264,8 @@ export async function appendToJot(date: string, title: string, line: JSONContent
   const jot = await ensureJot(date, title);
   for (let attempt = 0; attempt < 2; attempt++) {
     const fresh = unwrapOne(await supabase.from('pages').select('*').eq('id', jot.id).single());
-    const doc = (fresh.content as JSONContent | null) ?? { type: 'doc', content: [] };
-    const content = [...(doc.content ?? [])];
-    while (content.length && isBlankLine(content[content.length - 1])) content.pop();
-    content.push(line);
-    const next: JSONContent = { ...doc, type: 'doc', content };
+    const next = withAppendedLine(fresh.content as JSONContent | null, line);
+    if (!next) return fresh.id;
     const version = await savePage({
       id: fresh.id,
       baseVersion: fresh.version,
