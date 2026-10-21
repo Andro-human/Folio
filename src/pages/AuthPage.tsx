@@ -31,9 +31,7 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-6">
       <div className="relative z-10 w-full max-w-sm">
-        <h1 className="mb-1 text-4xl">
-          Notes
-        </h1>
+        <h1 className="mb-1 text-4xl font-bold">Folio</h1>
         <p className="mb-8 text-sm text-muted-foreground">Jots, notes and tasks in one place.</p>
 
         <form onSubmit={submit} className="space-y-3">

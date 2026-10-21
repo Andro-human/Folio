@@ -1,4 +1,4 @@
-# Note-taker — Plan
+# Folio — Plan
 
 A personal notes + task app that works properly on iPhone, costs nothing to run, and can be fed by Siri and AI assistants.
 
@@ -422,7 +422,7 @@ Each phase is usable on its own. **Switch over after phase 2.**
 2. **Priority levels:** High / Medium / Low, or just High / Low?
 3. **Task statuses:** To do / Deferred / Done enough, or add In progress?
 4. ~~Design~~ **Decided:** clean & minimal, own identity (see §6 Design).
-5. **Name:** the app and the GitHub repo name.
+5. ~~Name~~ **Decided:** Folio, served from the owner's own domain.
 6. **Commit email:** GitHub noreply (`95043753+Andro-human@users.noreply.github.com`) or a personal address?
 7. ~~Task trigger in the editor~~ **Decided:**
    - In jots, every line is a task by default; `- ` or a marker tap makes a plain note.

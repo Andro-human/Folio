@@ -14,8 +14,8 @@ export default defineConfig({
       registerType: "prompt",
       includeAssets: ["icon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png"],
       manifest: {
-        name: "Note-taker",
-        short_name: "Notes",
+        name: "Folio",
+        short_name: "Folio",
         description: "Notes, jots and tasks",
         start_url: "/",
         display: "standalone",

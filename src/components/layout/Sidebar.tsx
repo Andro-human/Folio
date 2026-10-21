@@ -47,7 +47,7 @@ export function Sidebar() {
   return (
     <aside className="sticky top-0 z-20 hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-card px-3 pb-4 pt-6 md:flex">
       <div className="mb-5 flex items-center justify-between px-2.5">
-        <span className="text-lg font-semibold tracking-tight">Notes</span>
+        <span className="text-lg font-semibold tracking-tight">Folio</span>
       </div>
 
       <button
