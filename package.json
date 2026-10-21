@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit -p . --pretty false",
     "preview": "vite preview",
     "test": "vitest run",
-    "gen:types": "supabase gen types typescript --project-id mmpebfokcviywsunkiev > src/integrations/supabase/types.ts"
+    "gen:types": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" > src/integrations/supabase/types.ts"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.2.1",

@@ -8,7 +8,7 @@ import { CAPTURE_URL, createApiToken, revokeApiToken, useApiTokens } from '@/dat
 import { relativeDayLabel } from '@/lib/dates';
 
 export function ShortcutsSection() {
-  const { data } = useApiTokens();
+  const { data, isError } = useApiTokens();
   const tokens = (data ?? []).filter((t) => t.scope === 'capture');
   const [naming, setNaming] = useState(false);
   const [fresh, setFresh] = useState<string | null>(null);
@@ -28,7 +28,9 @@ export function ShortcutsSection() {
         A token lets an iPhone Shortcut add tasks and notes — “Hey Siri, add task”. Make one per device; revoke it if a device is lost.
       </p>
 
-      {tokens.length === 0 ? (
+      {isError ? (
+        <p className="rounded-xl bg-card px-4 py-3 text-sm text-muted-foreground">Siri capture isn’t set up on the server yet.</p>
+      ) : tokens.length === 0 ? (
         <button
           type="button"
           onClick={() => setNaming(true)}
