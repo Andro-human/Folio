@@ -306,10 +306,10 @@ POST /internal/gcal-sync      DB webhook on tasks insert/update/delete
 
 ### Capture parsing
 
-- **Parser:** the input is free text ("call the bank Friday 5pm, high priority, work"). Gemini Flash-Lite (current version) turns it into structured output `{kind, title, body?, list?, priority?, deadline?, deadline_has_time, remind_at?, rrule?}`.
-  - **Thinking/reasoning disabled:** MT-Wallet's COST-INVESTIGATION found thinking tokens were the hidden cost.
-  - The prompt includes the user's timezone, the current time and the list names.
-- **Fallback:** if the LLM fails or times out (~4 s), use `chrono-node` for the date, the raw text as title and the default list.
+- **Parser:** the input is free text ("call the bank Friday 5pm, high priority, work"). The Shortcut's **Use Model** action (Apple Intelligence, Private Cloud Compute) splits it into `{title, when, list, priority, repeat}` and sends that as `parsed` next to the raw `text`.
+  - `when` stays as the spoken words ("tomorrow at 5"); the server resolves it with `chrono-node` in the user's timezone, so the model never does date maths.
+  - No server-side LLM and no API key; Apple's model is free on the phone.
+- **Fallback:** if `parsed` is missing or unusable, the server parses `text` itself: quick syntax, spoken lead-ins stripped, a bare "at 5" read as 5 pm.
 - **Shortcut timeout:** this all finishes within the Shortcut's timeout, so no reply-then-process-in-background (unlike MT-Wallet).
 
 ### MCP server
@@ -399,7 +399,7 @@ Each phase is usable on its own. **Switch over after phase 2.**
 |---|---|
 | Vercel Hobby | Free |
 | Supabase Free (DB, Auth, Edge Functions, pg_cron) | Free |
-| Gemini Flash-Lite for capture parsing | ~pennies/month at personal volume |
+| Capture parsing (Apple Intelligence in the Shortcut) | Free |
 | Google Calendar API | Free |
 | Domain (optional) | ~₹800/yr, only if a custom domain is wanted |
 

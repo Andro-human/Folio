@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { SectionTitle } from '@/components/layout/PageHeader';
 import { PromptDialog } from '@/components/notes/PromptDialog';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useLists } from '@/data/lists';
 import { CAPTURE_URL, createApiToken, revokeApiToken, useApiTokens } from '@/data/tokens';
 import { relativeDayLabel } from '@/lib/dates';
 
@@ -120,7 +121,22 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
 
 const B = ({ children }: { children: React.ReactNode }) => <span className="font-semibold">{children}</span>;
 
+/** For the Shortcut's "Use Model" step. Dates stay as spoken words; the server resolves them in your timezone. */
+function modelPrompt(lists: string[]): string {
+  return [
+    'Split this dictated to-do into JSON. Reply with only the JSON object, no other text.',
+    'Keys:',
+    '"title": the task in the speaker\'s own words, without lead-ins like "remind me to" and without the date, time, list, priority or repeat words.',
+    '"when": the date/time words exactly as spoken, e.g. "tomorrow at 5", "next friday morning", or null.',
+    `"list": ${lists.length ? `one of ${lists.join(', ')} if the speaker names it or it is obvious` : 'the list name if one is mentioned'}, else null.`,
+    '"priority": "high" if urgent, important or asap; "low" if someday or whenever; else null.',
+    '"repeat": one of "daily", "weekdays", "weekly", "monthly", "yearly", or null.',
+    'Dictated text:',
+  ].join('\n');
+}
+
 function SetupDialog({ token, onClose }: { token: string | null; onClose: () => void }) {
+  const { data: lists = [] } = useLists();
   return (
     <Dialog open={!!token} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
@@ -132,6 +148,7 @@ function SetupDialog({ token, onClose }: { token: string | null; onClose: () => 
             </p>
             <CopyField label="URL" value={CAPTURE_URL} />
             <CopyField label="Authorization header value" value={`Bearer ${token}`} />
+            <CopyField label="Prompt for Use Model" value={modelPrompt(lists.map((l) => l.name))} />
 
             <div>
               <div className="mb-2 flex items-center gap-2 text-[15px] font-semibold">
@@ -145,14 +162,18 @@ function SetupDialog({ token, onClose }: { token: string | null; onClose: () => 
                   Add <B>Dictate Text</B>.
                 </Step>
                 <Step n={3}>
-                  Add <B>Get Contents of URL</B> and paste the URL. Tap <B>Show More</B>: Method <B>POST</B>; under Headers add{' '}
-                  <B>Authorization</B> with the header value above; Request Body <B>JSON</B> with two text fields:{' '}
-                  <B>text</B> = <i>Dictated Text</i>, and <B>kind</B> = <B>task</B>.
+                  Add <B>Use Model</B> and pick <B>Private Cloud Compute</B>. Paste the prompt above, then insert{' '}
+                  <i>Dictated Text</i> at the very end. Leave Follow Up off.
                 </Step>
                 <Step n={4}>
-                  Add <B>Speak Text</B> (or <B>Show Result</B>) with <i>Contents of URL</i>, so Siri reads back what was added.
+                  Add <B>Get Contents of URL</B> and paste the URL. Tap <B>Show More</B>: Method <B>POST</B>; under Headers add{' '}
+                  <B>Authorization</B> with the header value above; Request Body <B>JSON</B> with three text fields:{' '}
+                  <B>text</B> = <i>Dictated Text</i>, <B>kind</B> = <B>task</B>, and <B>parsed</B> = <i>Response</i>.
                 </Step>
                 <Step n={5}>
+                  Add <B>Speak Text</B> (or <B>Show Result</B>) with <i>Contents of URL</i>, so Siri reads back what was added.
+                </Step>
+                <Step n={6}>
                   Say <B>“Hey Siri, add task”</B>, then e.g. “call the bank tomorrow at 5, work, important”.
                 </Step>
               </ol>
@@ -160,14 +181,14 @@ function SetupDialog({ token, onClose }: { token: string | null; onClose: () => 
 
             <div className="space-y-1.5 text-[14px] text-muted-foreground">
               <p>
-                <span className="text-foreground">Notes:</span> duplicate the shortcut, name it <B>Add note</B> and set{' '}
-                <B>kind</B> = <B>note</B>. It lands in today’s jot with the time.
+                <span className="text-foreground">Notes:</span> duplicate the shortcut, name it <B>Add note</B>, delete the Use
+                Model step and the <B>parsed</B> field, and set <B>kind</B> = <B>note</B>. It lands in today’s jot with the time.
               </p>
               <p className="flex gap-1.5">
                 <Share className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
-                  <span className="text-foreground">Share sheet:</span> in the shortcut’s settings turn on <B>Show in Share Sheet</B>, replace
-                  Dictate Text with <i>Shortcut Input</i>, and share links or text straight into your jot.
+                  <span className="text-foreground">Share sheet:</span> in the note shortcut’s settings turn on <B>Show in Share Sheet</B>,
+                  replace Dictate Text with <i>Shortcut Input</i>, and share links or text straight into your jot.
                 </span>
               </p>
             </div>

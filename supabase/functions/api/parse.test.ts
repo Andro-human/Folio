@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { basicParse, deadlineUtc } from './parse.ts';
+import { basicParse, deadlineUtc, modelParse, readModelFields } from './parse.ts';
 import { describeDeadline, jotTitle, localToUtc, zoned } from './time.ts';
 
 const tz = 'Asia/Kolkata';
@@ -47,10 +47,46 @@ describe('basicParse (server, zone-aware)', () => {
     expect(c).toMatchObject({ title: 'water plants', rrule: 'FREQ=WEEKLY;BYDAY=MO', date: '2026-10-19' });
   });
 
+  it('drops spoken lead-ins and reads a bare "at 5" as 5 pm', () => {
+    expect(basicParse('remind me to call mom tomorrow at 5', 'task', lists, now, tz)).toMatchObject({
+      title: 'call mom',
+      date: '2026-10-20',
+      time: '17:00',
+    });
+    expect(basicParse('gym tomorrow 6am', 'task', lists, now, tz).time).toBe('06:00');
+  });
+
   it('passes notes through untouched', () => {
     expect(basicParse('idea: tomorrow is a good day', 'note', lists, now, tz)).toMatchObject({
       kind: 'note',
       title: 'idea: tomorrow is a good day',
     });
+  });
+});
+
+describe('Apple Intelligence fields from the Shortcut', () => {
+  it('reads JSON text, even fenced', () => {
+    expect(readModelFields('```json\n{"title":"buy milk","when":null}\n```')).toEqual({ title: 'buy milk', when: null });
+    expect(readModelFields({ title: 'x' })).toEqual({ title: 'x' });
+  });
+
+  it('rejects output it cannot use', () => {
+    expect(readModelFields('Sure! Here is your task.')).toBeNull();
+    expect(readModelFields('{"title":""}')).toBeNull();
+    expect(readModelFields(undefined)).toBeNull();
+  });
+
+  it('resolves the spoken "when" in the user zone and matches the list loosely', () => {
+    const f = { title: 'call the bank', when: 'tomorrow at 5', list: 'work', priority: 'high', repeat: 'null' };
+    const c = modelParse(f, lists, now, tz);
+    expect(c).toMatchObject({ title: 'call the bank', listId: 'w', priority: 'high', date: '2026-10-20', time: '17:00', parser: 'model' });
+    expect(c.rrule).toBeUndefined();
+  });
+
+  it('starts a bare repeat today and ignores junk values', () => {
+    const c = modelParse({ title: 'stretch', repeat: 'daily', priority: 'urgent', list: 'nope' }, lists, now, tz);
+    expect(c).toMatchObject({ date: '2026-10-19', rrule: 'FREQ=DAILY' });
+    expect(c.priority).toBeUndefined();
+    expect(c.listId).toBeUndefined();
   });
 });

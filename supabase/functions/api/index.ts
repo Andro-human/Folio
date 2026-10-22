@@ -1,7 +1,6 @@
 import { Hono, type Context } from 'hono';
 import { createClient } from '@supabase/supabase-js';
-import { basicParse, deadlineUtc, type Capture, type ListRef } from './parse.ts';
-import { geminiParse } from './gemini.ts';
+import { basicParse, deadlineUtc, modelParse, readModelFields, type ListRef, type ModelFields } from './parse.ts';
 import { describeDeadline, jotTitle, zoned } from './time.ts';
 
 // Service role: every query below must filter by the user id resolved from the token.
@@ -32,14 +31,16 @@ async function userFor(c: Context, scope: 'capture' | 'mcp'): Promise<string | n
   return data.user_id;
 }
 
-async function readBody(c: Context): Promise<{ text: string; kind?: 'task' | 'note' }> {
+async function readBody(c: Context): Promise<{ text: string; kind?: 'task' | 'note'; fields: ModelFields | null }> {
   const type = c.req.header('content-type') ?? '';
   let text = '';
   let kind: string | undefined = c.req.query('kind');
+  let fields: ModelFields | null = null;
   if (type.includes('application/json')) {
     const body = await c.req.json().catch(() => ({}));
     text = String(body.text ?? body.input ?? '');
     kind = body.kind ?? kind;
+    fields = readModelFields(body.parsed);
   } else if (type.includes('form')) {
     const form = await c.req.parseBody();
     text = String(form.text ?? '');
@@ -47,14 +48,14 @@ async function readBody(c: Context): Promise<{ text: string; kind?: 'task' | 'no
   } else {
     text = await c.req.text();
   }
-  return { text: text.trim(), kind: kind === 'task' || kind === 'note' ? kind : undefined };
+  return { text: text.trim(), kind: kind === 'task' || kind === 'note' ? kind : undefined, fields };
 }
 
 app.post('/capture', async (c) => {
   const userId = await userFor(c, 'capture');
   if (!userId) return c.text('That token isn’t valid. Make a new one in the app’s Settings.', 401);
 
-  const { text, kind } = await readBody(c);
+  const { text, kind, fields } = await readBody(c);
   if (!text) return c.text('Nothing to add — say or type something first.', 400);
   if (text.length > 2000) return c.text('That’s too long for a quick capture.', 413);
 
@@ -67,13 +68,9 @@ app.post('/capture', async (c) => {
   const now = new Date();
   const local = zoned(now, tz);
 
-  let capture: Capture | null = null;
-  try {
-    capture = await geminiParse(text, kind, listRefs, local, tz);
-  } catch (e) {
-    console.warn('capture: gemini fallback', String(e).slice(0, 120));
-  }
-  capture ??= basicParse(text, kind ?? 'task', listRefs, now, tz);
+  // The model's split is optional: without it (or if it came back garbled) the phrase is parsed as typed.
+  const capture =
+    kind !== 'note' && fields ? modelParse(fields, listRefs, now, tz) : basicParse(text, kind ?? 'task', listRefs, now, tz);
 
   const id = crypto.randomUUID();
   const title = jotTitle(local.date);
