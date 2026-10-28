@@ -128,7 +128,6 @@ DB webhook on tasks change ──► /internal/gcal-sync ──► Google Calend
   functions/
     api/              Hono app: capture, MCP, tokens, google, internal/*
     _shared/          webpush.ts, auth.ts, db.ts, parse.ts, tiptap-markdown.ts
-/.github/workflows    deploy functions, monthly backup
 PLAN.md
 ```
 
@@ -383,7 +382,7 @@ Each phase is usable on its own. **Switch over after phase 2.**
 |---|---|---|
 | 0 | **Foundation** | Repo, Supabase project, Vercel, schema, auth, PWA shell (copied from MT-Wallet with §6 fixes), tab layout, design tokens, CI deploy for functions |
 | 1 | **Notes + jots** | Folders, pages, sub-pages, TipTap editor + mobile toolbar, autosave + conflict banner, `@` links + backlinks, search, Trash, daily jots + Jots feed |
-| 2 | **Tasks** | Make-a-task, lists, priority/status/deadline/repeat, Today / Upcoming / per-list / Deferred, recurring completion, task chips in jots and pages. **Monthly backup workflow** (copy `mtwallet-ops`) |
+| 2 | **Tasks** | Make-a-task, lists, priority/status/deadline/repeat, Today / Upcoming / per-list / Deferred, recurring completion, task chips in jots and pages. **Monthly backup workflow** (lives in the private `Andro-human/personal-ops` repo, next to MT-Wallet's) |
 | 3 | **Quick + offline capture** | Capture sheet, IndexedDB outbox, offline state |
 | 4 | **Siri** | `api_tokens`, `/capture` with LLM parse + fallback, the three Shortcuts |
 | 5 | **Reminders** | Push subscription, `/internal/tick` via pg_cron, notification deep links |
