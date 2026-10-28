@@ -30,6 +30,7 @@ export const keys = {
   jots: ['pages', 'jots'] as const,
   recent: ['pages', 'recent'] as const,
   search: (q: string) => ['search', q] as const,
+  events: ['events'] as const,
 };
 
 export function unwrap<T>(res: { data: T; error: { message: string } | null }): T {

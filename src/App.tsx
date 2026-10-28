@@ -13,6 +13,7 @@ import NotesPage from '@/pages/NotesPage';
 import JotsPage from '@/pages/JotsPage';
 import PageView from '@/pages/PageView';
 import SearchPage from '@/pages/SearchPage';
+import SchedulePage from '@/pages/SchedulePage';
 import SettingsPage from '@/pages/SettingsPage';
 
 function RequireAuth() {
@@ -36,6 +37,7 @@ export default function App() {
                   <Route index element={<TodayPage />} />
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="tasks/list/:listId" element={<TasksPage />} />
+                  <Route path="schedule" element={<SchedulePage />} />
                   <Route path="notes" element={<NotesPage />} />
                   <Route path="notes/f/:folderId" element={<NotesPage />} />
                   <Route path="jots" element={<JotsPage />} />

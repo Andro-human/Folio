@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
+  CalendarClock,
   CalendarDays,
   ChevronRight,
   Folder,
@@ -69,6 +70,9 @@ export function Sidebar() {
         </NavLink>
         <NavLink to="/tasks" end className={linkClass}>
           <ListTodo className="h-4 w-4" /> Tasks
+        </NavLink>
+        <NavLink to="/schedule" className={linkClass}>
+          <CalendarClock className="h-4 w-4" /> Schedule
         </NavLink>
         <NavLink to="/notes" end className={linkClass}>
           <NotebookPen className="h-4 w-4" /> Notes

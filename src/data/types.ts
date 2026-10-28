@@ -6,6 +6,7 @@ export type PageRow = T['pages']['Row'];
 export type TaskRow = T['tasks']['Row'];
 export type ListRow = T['lists']['Row'];
 export type FolderRow = T['folders']['Row'];
+export type EventRow = T['events']['Row'];
 export type Priority = Database['public']['Enums']['task_priority'];
 export type TaskStatus = Database['public']['Enums']['task_status'];
 

@@ -50,6 +50,57 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          alert_minutes: number | null
+          created_at: string
+          days: number[] | null
+          end_time: string
+          ends_on: string | null
+          id: string
+          next_alert_at: string | null
+          on_date: string | null
+          skip_dates: string[]
+          start_time: string
+          starts_on: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_minutes?: number | null
+          created_at?: string
+          days?: number[] | null
+          end_time: string
+          ends_on?: string | null
+          id?: string
+          next_alert_at?: string | null
+          on_date?: string | null
+          skip_dates?: string[]
+          start_time: string
+          starts_on?: string
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          alert_minutes?: number | null
+          created_at?: string
+          days?: number[] | null
+          end_time?: string
+          ends_on?: string | null
+          id?: string
+          next_alert_at?: string | null
+          on_date?: string | null
+          skip_dates?: string[]
+          start_time?: string
+          starts_on?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       folders: {
         Row: {
           created_at: string
@@ -386,6 +437,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_due_events: {
+        Args: never
+        Returns: {
+          alert_at: string
+          alert_minutes: number
+          end_time: string
+          event_id: string
+          start_time: string
+          title: string
+          user_id: string
+        }[]
+      }
       complete_task: {
         Args: {
           p_next_deadline?: string

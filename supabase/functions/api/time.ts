@@ -68,8 +68,21 @@ export function describeDeadline(date: string, time: string | null, today: strin
   const diff = Math.round((Date.UTC(y, m - 1, d) - Date.parse(`${today}T00:00:00Z`)) / 86400000);
   const day =
     diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : diff > 1 && diff < 7 ? DAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] : `${d} ${MONTHS[m - 1]}`;
-  if (!time) return day;
+  return time ? `${day}, ${clock(time)}` : day;
+}
+
+/** "HH:mm" or Postgres "HH:mm:ss" (including "24:00:00") → "5:00 pm". */
+export function clock(time: string): string {
   const [hh, mm] = time.split(':').map(Number);
-  const h12 = hh % 12 || 12;
-  return `${day}, ${h12}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'am' : 'pm'}`;
+  const h = hh % 24;
+  return `${h % 12 || 12}:${String(mm).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+}
+
+/** How far off a schedule item is when its alert fires: "Now", "In 10 min", "In 1 hour". */
+export function describeLead(minutes: number): string {
+  if (minutes === 0) return 'Now';
+  if (minutes < 60) return `In ${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `In ${h} hour${h === 1 ? '' : 's'}${m ? ` ${m} min` : ''}`;
 }

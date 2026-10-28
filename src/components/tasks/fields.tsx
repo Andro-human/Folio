@@ -38,14 +38,14 @@ export function withRepeat(s: Schedule, rrule: string | null): Schedule {
 
 type Size = 'md' | 'sm';
 
-const chipClass = (active: boolean, size: Size = 'md') =>
+export const chipClass = (active: boolean, size: Size = 'md') =>
   cn(
     'inline-flex shrink-0 items-center gap-1.5 rounded-full border transition-colors',
     size === 'sm' ? 'h-7 px-2.5 text-xs' : 'h-8 px-3 text-[13px]',
     active ? 'border-border bg-muted text-foreground' : 'border-dashed border-border text-muted-foreground hover:text-foreground',
   );
 
-function Chip({
+export function Chip({
   icon,
   label,
   active,
@@ -74,7 +74,7 @@ function Chip({
   );
 }
 
-function MenuRow({
+export function MenuRow({
   children,
   selected,
   onClick,

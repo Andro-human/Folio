@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { PageBody, PageHeader, SectionTitle } from '@/components/layout/PageHeader';
 import { PrioritySections } from '@/components/tasks/PrioritySections';
 import { QuickTaskInput } from '@/components/tasks/QuickTaskInput';
+import { UpNext } from '@/components/schedule/UpNext';
 import { PageEditor } from '@/components/editor/PageEditor';
 import { useOpenTasks, groupTasks } from '@/data/tasks';
 import { useLists } from '@/data/lists';
@@ -38,6 +39,8 @@ export default function TodayPage() {
           <h1 className="text-[2.125rem] font-bold leading-tight md:text-[2.5rem]">Today</h1>
           <p className="text-[15px] text-muted-foreground">{format(now, 'EEEE, d MMMM')}</p>
         </div>
+
+        <UpNext />
 
         <section className="mb-9">
           {groups.overdue.length > 0 && (

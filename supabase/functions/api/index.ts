@@ -2,7 +2,7 @@ import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 import { createClient } from '@supabase/supabase-js';
 import { basicParse, deadlineUtc, modelParse, readModelFields, type ListRef, type ModelFields } from './parse.ts';
-import { describeDeadline, jotTitle, zoned } from './time.ts';
+import { clock, describeDeadline, describeLead, jotTitle, zoned } from './time.ts';
 import { sendPush, type PushTarget } from './webpush.ts';
 
 // Service role: every query below must filter by the user id resolved from the token.
@@ -136,51 +136,90 @@ interface DueReminder {
   deadline_has_time: boolean;
 }
 
+interface DueEvent {
+  event_id: string;
+  user_id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  alert_minutes: number;
+  alert_at: string;
+}
+
+interface PushMessage {
+  user_id: string;
+  payload: { title: string; body: string; url: string; tag: string };
+}
+
 /**
  * Called every minute by pg_cron (only when something is due). No secret: claiming is exactly-once,
  * so an extra call can't send anything twice or early — it just finds nothing to do.
  */
 app.post('/internal/tick', async (c) => {
-  const { data: due, error } = await admin.rpc('claim_due_reminders');
-  if (error) throw new Error(`claim: ${error.message}`);
-  const reminders = (due ?? []) as DueReminder[];
-  if (!reminders.length) return c.json({ sent: 0 });
+  // Both claims commit on their own, so one failing mustn't throw away what the other claimed.
+  const [tasks, events] = await Promise.all([admin.rpc('claim_due_reminders'), admin.rpc('claim_due_events')]);
+  if (tasks.error) console.error('claim reminders', tasks.error.message);
+  if (events.error) console.error('claim events', events.error.message);
+  const reminders = (tasks.data ?? []) as DueReminder[];
+  const alerts = (events.data ?? []) as DueEvent[];
+  const due = reminders.length + alerts.length;
+  if (!due) return c.json({ sent: 0 });
 
-  const users = [...new Set(reminders.map((r) => r.user_id))];
+  const users = [...new Set([...reminders, ...alerts].map((r) => r.user_id))];
   const [{ data: subs }, { data: profiles }] = await Promise.all([
     admin.from('push_subscriptions').select('user_id, endpoint, p256dh, auth').in('user_id', users),
     admin.from('profiles').select('user_id, timezone').in('user_id', users),
   ]);
   const tzOf = new Map((profiles ?? []).map((p) => [p.user_id, p.timezone ?? 'Asia/Kolkata']));
+  const tz = (userId: string) => tzOf.get(userId) ?? 'Asia/Kolkata';
+
+  const messages: PushMessage[] = [
+    ...reminders.map((r) => {
+      const at = zoned(new Date(r.deadline), tz(r.user_id));
+      return {
+        user_id: r.user_id,
+        payload: {
+          title: r.title || 'Untitled task',
+          body: `Due ${describeDeadline(at.date, r.deadline_has_time ? at.time : null, zoned(new Date(), tz(r.user_id)).date)}`,
+          url: `/p/${r.page_id}`,
+          tag: r.page_id,
+        },
+      };
+    }),
+    ...alerts.map((a) => {
+      const starts = new Date(new Date(a.alert_at).getTime() + a.alert_minutes * 60_000);
+      return {
+        user_id: a.user_id,
+        payload: {
+          title: a.title,
+          body: `${describeLead(a.alert_minutes)} · ${clock(a.start_time)} – ${clock(a.end_time)}`,
+          url: `/schedule?d=${zoned(starts, tz(a.user_id)).date}`,
+          tag: `event-${a.event_id}`,
+        },
+      };
+    }),
+  ];
 
   let sent = 0;
   const gone: string[] = [];
   await Promise.all(
-    reminders.flatMap((r) => {
-      const tz = tzOf.get(r.user_id) ?? 'Asia/Kolkata';
-      const at = zoned(new Date(r.deadline), tz);
-      const payload = {
-        title: r.title || 'Untitled task',
-        body: `Due ${describeDeadline(at.date, r.deadline_has_time ? at.time : null, zoned(new Date(), tz).date)}`,
-        url: `/p/${r.page_id}`,
-        tag: r.page_id,
-      };
-      return (subs ?? [])
-        .filter((s) => s.user_id === r.user_id)
+    messages.flatMap((m) =>
+      (subs ?? [])
+        .filter((s) => s.user_id === m.user_id)
         .map(async (s) => {
           try {
-            const status = await sendPush(s as PushTarget, payload, VAPID);
+            const status = await sendPush(s as PushTarget, m.payload, VAPID);
             if (status === 404 || status === 410) gone.push(s.endpoint);
             else if (status < 300) sent++;
             else console.warn('push rejected', status, new URL(s.endpoint).host);
           } catch (e) {
             console.warn('push failed', new URL(s.endpoint).host, String(e).slice(0, 120));
           }
-        });
-    }),
+        }),
+    ),
   );
-  if (gone.length) await admin.from('push_subscriptions').delete().in('endpoint', gone);
-  return c.json({ due: reminders.length, sent, removed: gone.length });
+  if (gone.length) await admin.from('push_subscriptions').delete().in('endpoint', [...new Set(gone)]);
+  return c.json({ due, sent, removed: new Set(gone).size });
 });
 
 /** Sends a test notification to the caller's devices, from Settings. Uses the signed-in user's JWT. */

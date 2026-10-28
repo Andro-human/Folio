@@ -242,9 +242,10 @@ Offline, the app still opens, and new notes and tasks can still be created. Exis
 
 ### Navigation
 
-- Bottom tab bar with 4 tabs: **Today · Tasks · Notes · Search**.
+- Bottom tab bar with 5 tabs: **Today · Tasks · Schedule · Notes · Search**.
 - A central **capture** button opens a vaul bottom sheet: type or dictate, toggle note/task, pick a list and deadline.
-- **Today:** a compact agenda (overdue, due today, today's Google Calendar events), with today's jot editor below it.
+- **Today:** a compact agenda (Up next from the schedule, overdue, due today, today's Google Calendar events), with today's jot editor below it.
+- **Schedule:** a week strip over a day timeline. Schedule items are blocks, timed tasks are small rows with a checkbox, and a red line marks now. See §7 *Schedule*.
 - **Notes:** has a pinned **Jots** feed at the top.
 - **Tasks:** lists, an Upcoming view (next 14 days, grouped by day, calendar events interleaved), and Deferred.
 - **Notes:** folder tree → pages → sub-pages, with breadcrumbs.
@@ -344,6 +345,13 @@ POST /internal/gcal-sync      DB webhook on tasks insert/update/delete
 - **Expired subscriptions:** 404/410 → delete the subscription.
 - **iOS requirement:** iOS 16.4+, and only after "Add to Home Screen". The app checks for this and explains it.
 
+### Schedule (timetable)
+
+- **`events` table:** title, wall-clock `start_time`/`end_time` in the profile timezone, and either `on_date` (one-off) or `days` (ISO weekdays, repeating from `starts_on`, optional `ends_on`). `skip_dates` drops single days. An item can't cross midnight; ending at midnight is stored as `24:00`.
+- **Alerts:** `alert_minutes` before the start (null = none, default 10). A trigger keeps `next_alert_at` current via `event_next_alert()`. `claim_due_events()` hands each alert out once and moves the item to its next occurrence; alerts over an hour late are dropped.
+- **Delivery:** the same per-minute `/internal/tick` as task reminders. The payload reads "In 10 min · 7:00 – 8:00 am" and deep-links to `/schedule?d=<date>`.
+- Edits apply to the whole series. "Skip" removes one day.
+
 ### Google Calendar
 
 - **Connect flow:** from MT-Wallet's `PLAN-gmail-multiuser.md` design.
@@ -385,7 +393,7 @@ Each phase is usable on its own. **Switch over after phase 2.**
 | 2 | **Tasks** | Make-a-task, lists, priority/status/deadline/repeat, Today / Upcoming / per-list / Deferred, recurring completion, task chips in jots and pages. **Monthly backup workflow** (lives in the private `Andro-human/personal-ops` repo, next to MT-Wallet's) |
 | 3 | **Quick + offline capture** | Capture sheet, IndexedDB outbox, offline state |
 | 4 | **Siri** | `api_tokens`, `/capture` with LLM parse + fallback, the three Shortcuts |
-| 5 | **Reminders** | Push subscription, `/internal/tick` via pg_cron, notification deep links |
+| 5 | **Reminders** | Push subscription, `/internal/tick` via pg_cron, notification deep links. **Schedule**: timetable with per-item alerts |
 | 6 | **MCP** | Markdown ↔ TipTap spike first, then tools, connect Claude + ChatGPT |
 | 7 | **Google Calendar** | Connect flow, Tasks calendar write-sync, events in Today/Upcoming |
 | 8 | **Polish** | 8 am daily digest push, images, snooze, settings, performance pass |

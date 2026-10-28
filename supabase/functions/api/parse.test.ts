@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { basicParse, deadlineUtc, modelParse, readModelFields } from './parse.ts';
-import { describeDeadline, jotTitle, localToUtc, zoned } from './time.ts';
+import { clock, describeDeadline, describeLead, jotTitle, localToUtc, zoned } from './time.ts';
 
 const tz = 'Asia/Kolkata';
 const lists = [
@@ -25,6 +25,17 @@ describe('time helpers', () => {
     expect(jotTitle('2026-10-20')).toBe('Tue, 20 Oct 2026');
     expect(describeDeadline('2026-10-20', '17:00', '2026-10-19')).toBe('tomorrow, 5:00 pm');
     expect(describeDeadline('2026-10-23', null, '2026-10-19')).toBe('Fri');
+  });
+
+  it('formats schedule alerts', () => {
+    expect(clock('07:05:00')).toBe('7:05 am');
+    expect(clock('12:00:00')).toBe('12:00 pm');
+    expect(clock('00:30:00')).toBe('12:30 am');
+    expect(clock('24:00:00')).toBe('12:00 am');
+    expect(describeLead(0)).toBe('Now');
+    expect(describeLead(10)).toBe('In 10 min');
+    expect(describeLead(60)).toBe('In 1 hour');
+    expect(describeLead(90)).toBe('In 1 hour 30 min');
   });
 });
 

@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { ListTodo, NotebookPen, Plus, Search, Sun } from 'lucide-react';
+import { CalendarClock, ListTodo, NotebookPen, Plus, Search, Sun } from 'lucide-react';
 import { useCapture } from './capture';
 import { cn } from '@/lib/utils';
 
 const items = [
   { to: '/', icon: Sun, label: 'Today', match: (p: string) => p === '/' },
   { to: '/tasks', icon: ListTodo, label: 'Tasks', match: (p: string) => p.startsWith('/tasks') },
+  { to: '/schedule', icon: CalendarClock, label: 'Schedule', match: (p: string) => p.startsWith('/schedule') },
   {
     to: '/notes',
     icon: NotebookPen,
