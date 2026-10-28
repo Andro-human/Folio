@@ -30,6 +30,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: "/index.html",
+        // Push + notification-click handlers live outside the generated worker.
+        importScripts: ["/sw-push.js"],
         // App data is never cached: the server is the only copy (PLAN §6).
       },
       devOptions: { enabled: false },

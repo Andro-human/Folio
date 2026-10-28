@@ -282,6 +282,36 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           completed_at: string | null
@@ -377,6 +407,10 @@ export type Database = {
           p_rrule?: string
           p_title: string
         }
+        Returns: undefined
+      }
+      register_push: {
+        Args: { p_auth: string; p_endpoint: string; p_p256dh: string; p_user_agent: string }
         Returns: undefined
       }
       rename_page: {

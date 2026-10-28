@@ -3,6 +3,7 @@ import { LogOut, Moon, Plus, Sun, SunMoon, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageBody, PageHeader, ScreenTitle, SectionTitle } from '@/components/layout/PageHeader';
 import { PromptDialog } from '@/components/notes/PromptDialog';
+import { RemindersSection } from '@/components/settings/RemindersSection';
 import { ShortcutsSection } from '@/components/settings/ShortcutsSection';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme, type ThemePreference } from '@/hooks/useTheme';
@@ -92,6 +93,8 @@ export default function SettingsPage() {
           </div>
           <p className="mt-2 text-xs text-muted-foreground">Tap a dot to change its colour, a name to rename it.</p>
         </section>
+
+        <RemindersSection />
 
         <ShortcutsSection />
 

@@ -1,14 +1,31 @@
 import { Hono, type Context } from 'hono';
+import { cors } from 'hono/cors';
 import { createClient } from '@supabase/supabase-js';
 import { basicParse, deadlineUtc, modelParse, readModelFields, type ListRef, type ModelFields } from './parse.ts';
 import { describeDeadline, jotTitle, zoned } from './time.ts';
+import { sendPush, type PushTarget } from './webpush.ts';
 
 // Service role: every query below must filter by the user id resolved from the token.
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
   auth: { persistSession: false },
 });
 
+const VAPID = {
+  publicKey: Deno.env.get('VAPID_PUBLIC_KEY')!,
+  privateKey: Deno.env.get('VAPID_PRIVATE_KEY')!,
+  subject: Deno.env.get('VAPID_SUBJECT')!,
+};
+
 const app = new Hono().basePath('/api');
+
+// Only the in-app routes are called from a browser; Shortcuts and pg_cron don't send an Origin.
+app.use(
+  '/push/*',
+  cors({
+    origin: ['https://folio.animeshsinha.dev', 'https://note-taker-theta-eight.vercel.app', 'http://localhost:5180'],
+    allowHeaders: ['authorization', 'content-type', 'apikey', 'x-client-info'],
+  }),
+);
 
 async function sha256Hex(s: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
@@ -109,6 +126,77 @@ app.post('/capture', async (c) => {
     capture.priority === 'high' ? 'high priority' : null,
   ].filter(Boolean);
   return c.text(`Added: ${capture.title}${bits.length ? ` — ${bits.join(', ')}` : ''}.`);
+});
+
+interface DueReminder {
+  page_id: string;
+  user_id: string;
+  title: string;
+  deadline: string;
+  deadline_has_time: boolean;
+}
+
+/**
+ * Called every minute by pg_cron (only when something is due). No secret: claiming is exactly-once,
+ * so an extra call can't send anything twice or early — it just finds nothing to do.
+ */
+app.post('/internal/tick', async (c) => {
+  const { data: due, error } = await admin.rpc('claim_due_reminders');
+  if (error) throw new Error(`claim: ${error.message}`);
+  const reminders = (due ?? []) as DueReminder[];
+  if (!reminders.length) return c.json({ sent: 0 });
+
+  const users = [...new Set(reminders.map((r) => r.user_id))];
+  const [{ data: subs }, { data: profiles }] = await Promise.all([
+    admin.from('push_subscriptions').select('user_id, endpoint, p256dh, auth').in('user_id', users),
+    admin.from('profiles').select('user_id, timezone').in('user_id', users),
+  ]);
+  const tzOf = new Map((profiles ?? []).map((p) => [p.user_id, p.timezone ?? 'Asia/Kolkata']));
+
+  let sent = 0;
+  const gone: string[] = [];
+  await Promise.all(
+    reminders.flatMap((r) => {
+      const tz = tzOf.get(r.user_id) ?? 'Asia/Kolkata';
+      const at = zoned(new Date(r.deadline), tz);
+      const payload = {
+        title: r.title || 'Untitled task',
+        body: `Due ${describeDeadline(at.date, r.deadline_has_time ? at.time : null, zoned(new Date(), tz).date)}`,
+        url: `/p/${r.page_id}`,
+        tag: r.page_id,
+      };
+      return (subs ?? [])
+        .filter((s) => s.user_id === r.user_id)
+        .map(async (s) => {
+          try {
+            const status = await sendPush(s as PushTarget, payload, VAPID);
+            if (status === 404 || status === 410) gone.push(s.endpoint);
+            else if (status < 300) sent++;
+            else console.warn('push rejected', status, new URL(s.endpoint).host);
+          } catch (e) {
+            console.warn('push failed', new URL(s.endpoint).host, String(e).slice(0, 120));
+          }
+        });
+    }),
+  );
+  if (gone.length) await admin.from('push_subscriptions').delete().in('endpoint', gone);
+  return c.json({ due: reminders.length, sent, removed: gone.length });
+});
+
+/** Sends a test notification to the caller's devices, from Settings. Uses the signed-in user's JWT. */
+app.post('/push/test', async (c) => {
+  const jwt = /^Bearer\s+(\S+)$/i.exec(c.req.header('authorization') ?? '')?.[1];
+  const { data: auth } = jwt ? await admin.auth.getUser(jwt) : { data: { user: null } };
+  if (!auth.user) return c.text('Sign in first.', 401);
+  const { data: subs } = await admin.from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', auth.user.id);
+  const results = await Promise.all(
+    (subs ?? []).map((s) =>
+      sendPush(s as PushTarget, { title: 'Reminders are on', body: 'Timed tasks will notify you here.', url: '/', tag: 'test' }, VAPID).catch(() => 0),
+    ),
+  );
+  const gone = (subs ?? []).filter((_, i) => results[i] === 404 || results[i] === 410).map((s) => s.endpoint);
+  if (gone.length) await admin.from('push_subscriptions').delete().in('endpoint', gone);
+  return c.json({ devices: results.filter((s) => s > 0 && s < 300).length });
 });
 
 app.get('/health', (c) => c.text('ok'));
