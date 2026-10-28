@@ -58,11 +58,14 @@ export function TaskRow({
   list,
   originTitle,
   showList = true,
+  drag,
 }: {
   task: Task;
   list?: ListRow;
   originTitle?: string | null;
   showList?: boolean;
+  /** From useDraggable, when the row can be dragged to another priority. */
+  drag?: { ref: (el: HTMLElement | null) => void; props: React.HTMLAttributes<HTMLElement>; dragging: boolean };
 }) {
   const done = task.status === 'done';
   const overdue = !done && isOverdue(task.deadline, task.deadline_has_time);
@@ -73,7 +76,13 @@ export function TaskRow({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, height: 0 }}
-      className="group flex items-start gap-3 border-b border-border/60 py-2.5 last:border-0"
+      ref={drag?.ref}
+      {...(drag?.props as object)}
+      className={cn(
+        'group flex items-start gap-3 border-b border-border/60 py-2.5 last:border-0',
+        drag && 'touch-manipulation select-none [-webkit-touch-callout:none]',
+        drag?.dragging && 'opacity-30',
+      )}
     >
       <div className="pt-[3px]">
         <TaskCheck task={task} />

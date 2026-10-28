@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
 import { Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { PageBody, PageHeader, SectionTitle } from '@/components/layout/PageHeader';
-import { TaskRow } from '@/components/tasks/TaskRow';
+import { PrioritySections } from '@/components/tasks/PrioritySections';
 import { QuickTaskInput } from '@/components/tasks/QuickTaskInput';
 import { PageEditor } from '@/components/editor/PageEditor';
 import { useOpenTasks, groupTasks } from '@/data/tasks';
@@ -46,11 +45,7 @@ export default function TodayPage() {
               <SectionTitle>
                 <span className="text-destructive">Overdue · {groups.overdue.length}</span>
               </SectionTitle>
-              <AnimatePresence initial={false}>
-                {groups.overdue.map((t) => (
-                  <TaskRow key={t.page_id} task={t} list={t.list_id ? listById.get(t.list_id) : undefined} />
-                ))}
-              </AnimatePresence>
+              <PrioritySections tasks={groups.overdue} listById={listById} />
             </div>
           )}
 
@@ -58,11 +53,7 @@ export default function TodayPage() {
             Due today{today.length ? ` · ${today.length}` : ''}
           </SectionTitle>
           <QuickTaskInput defaultDeadline={dateOnlyToISO(now)} placeholder="Add a task for today…" />
-          <AnimatePresence initial={false}>
-            {today.map((t) => (
-              <TaskRow key={t.page_id} task={t} list={t.list_id ? listById.get(t.list_id) : undefined} />
-            ))}
-          </AnimatePresence>
+          <PrioritySections tasks={today} listById={listById} />
           {nothing && <p className="py-3 text-sm text-muted-foreground">Nothing due today.</p>}
         </section>
 

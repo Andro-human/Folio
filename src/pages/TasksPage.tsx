@@ -5,7 +5,8 @@ import { ChevronDown } from 'lucide-react';
 import { PageBody, PageHeader, ScreenTitle, SectionTitle } from '@/components/layout/PageHeader';
 import { TaskRow } from '@/components/tasks/TaskRow';
 import { QuickTaskInput } from '@/components/tasks/QuickTaskInput';
-import { groupTasks, useDoneTasks, useOpenTasks, byPriorityThenDeadline } from '@/data/tasks';
+import { PrioritySections } from '@/components/tasks/PrioritySections';
+import { groupTasks, useDoneTasks, useOpenTasks } from '@/data/tasks';
 import { useLists, listColorVar } from '@/data/lists';
 import type { ListRow, Task } from '@/data/types';
 import { relativeDayLabel, startOfDay, toDateKey } from '@/lib/dates';
@@ -157,13 +158,13 @@ function UpcomingView({ listById }: { listById: Map<string, ListRow> }) {
           <SectionTitle>
             <span className="text-destructive">Overdue</span>
           </SectionTitle>
-          <Rows tasks={groups.overdue} listById={listById} />
+          <PrioritySections tasks={groups.overdue} listById={listById} />
         </section>
       )}
       <section>
         <SectionTitle>Today</SectionTitle>
         {groups.today.length ? (
-          <Rows tasks={groups.today} listById={listById} />
+          <PrioritySections tasks={groups.today} listById={listById} />
         ) : (
           <p className="py-2 text-sm text-muted-foreground">Nothing due today.</p>
         )}
@@ -171,13 +172,13 @@ function UpcomingView({ listById }: { listById: Map<string, ListRow> }) {
       {days.byDay.map(([key, tasks]) => (
         <section key={key}>
           <SectionTitle>{relativeDayLabel(new Date(`${key}T00:00`))}</SectionTitle>
-          <Rows tasks={tasks.sort(byPriorityThenDeadline)} listById={listById} />
+          <PrioritySections tasks={tasks} listById={listById} />
         </section>
       ))}
       {days.later.length > 0 && (
         <section>
           <SectionTitle>Later</SectionTitle>
-          <Rows tasks={days.later} listById={listById} />
+          <PrioritySections tasks={days.later} listById={listById} />
         </section>
       )}
       {groups.noDate.length > 0 && (
@@ -199,7 +200,7 @@ function FlatView({ pick, listById, empty }: { pick: 'noDate' | 'deferred'; list
   return (
     <>
       {pick === 'noDate' && <QuickTaskInput />}
-      {tasks.length ? <Rows tasks={tasks} listById={listById} /> : <p className="py-2 text-sm text-muted-foreground">{empty}</p>}
+      {tasks.length ? <PrioritySections tasks={tasks} listById={listById} /> : <p className="py-2 text-sm text-muted-foreground">{empty}</p>}
     </>
   );
 }
@@ -225,19 +226,19 @@ function ListView({ list, listById }: { list: ListRow; listById: Map<string, Lis
       {dated.length > 0 && (
         <section>
           <SectionTitle>Scheduled</SectionTitle>
-          <Rows tasks={dated} listById={listById} showList={false} />
+          <PrioritySections tasks={dated} listById={listById} showList={false} />
         </section>
       )}
       {groups.noDate.length > 0 && (
         <section>
           <SectionTitle>No date</SectionTitle>
-          <Rows tasks={groups.noDate} listById={listById} showList={false} />
+          <PrioritySections tasks={groups.noDate} listById={listById} showList={false} />
         </section>
       )}
       {groups.deferred.length > 0 && (
         <section>
           <SectionTitle>Deferred</SectionTitle>
-          <Rows tasks={groups.deferred} listById={listById} showList={false} />
+          <PrioritySections tasks={groups.deferred} listById={listById} showList={false} />
         </section>
       )}
       {!dated.length && !groups.noDate.length && !groups.deferred.length && (
