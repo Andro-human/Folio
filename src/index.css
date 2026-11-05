@@ -206,6 +206,12 @@
   text-decoration-thickness: 1px;
 }
 
+/* Links inside cards and embeds style themselves. */
+.ProseMirror [data-node-view-wrapper] a {
+  color: inherit;
+  text-decoration: none;
+}
+
 .ProseMirror p.is-empty::before,
 .ProseMirror h1.is-empty::before,
 .ProseMirror h2.is-empty::before,
@@ -272,6 +278,11 @@
 .ProseMirror .ProseMirror-selectednode {
   outline: 1px solid hsl(var(--ring));
   border-radius: 4px;
+}
+
+/* Images, cards and embeds draw their own selection ring around just the visible part. */
+.ProseMirror .ProseMirror-selectednode:is(.node-image, .node-bookmark, .node-embed) {
+  outline: none;
 }
 
 /* Task lines: round box (a real task) vs. the square formatting checkbox. */

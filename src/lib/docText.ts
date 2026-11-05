@@ -30,6 +30,12 @@ export function docToText(doc: JSONContent | null | undefined): string {
       current += '\n';
       return;
     }
+    // Link blocks are searchable by their title and address.
+    if (node.type === 'bookmark' || node.type === 'embed') {
+      const line = [node.attrs?.title, node.attrs?.url].filter(Boolean).join(' ');
+      if (line) lines.push(line);
+      return;
+    }
     node.content?.forEach(walk);
     if (node.type && BLOCKS.has(node.type)) {
       if (current.trim()) lines.push(current.trim());

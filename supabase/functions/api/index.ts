@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { basicParse, deadlineUtc, modelParse, readModelFields, type ListRef, type ModelFields } from './parse.ts';
 import { clock, describeDeadline, describeLead, jotTitle, zoned } from './time.ts';
 import { sendPush, type PushTarget } from './webpush.ts';
+import { fetchPreview } from './unfurl.ts';
 
 // Service role: every query below must filter by the user id resolved from the token.
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
@@ -19,13 +20,20 @@ const VAPID = {
 const app = new Hono().basePath('/api');
 
 // Only the in-app routes are called from a browser; Shortcuts and pg_cron don't send an Origin.
-app.use(
-  '/push/*',
-  cors({
-    origin: ['https://folio.animeshsinha.dev', 'https://note-taker-theta-eight.vercel.app', 'http://localhost:5180'],
-    allowHeaders: ['authorization', 'content-type', 'apikey', 'x-client-info'],
-  }),
-);
+const appCors = cors({
+  origin: ['https://folio.animeshsinha.dev', 'https://note-taker-theta-eight.vercel.app', 'http://localhost:5180'],
+  allowHeaders: ['authorization', 'content-type', 'apikey', 'x-client-info'],
+});
+app.use('/push/*', appCors);
+app.use('/link/*', appCors);
+
+/** The signed-in app user, from their Supabase session JWT. */
+async function sessionUser(c: Context): Promise<string | null> {
+  const jwt = /^Bearer\s+(\S+)$/i.exec(c.req.header('authorization') ?? '')?.[1];
+  if (!jwt) return null;
+  const { data } = await admin.auth.getUser(jwt);
+  return data.user?.id ?? null;
+}
 
 async function sha256Hex(s: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
@@ -224,10 +232,9 @@ app.post('/internal/tick', async (c) => {
 
 /** Sends a test notification to the caller's devices, from Settings. Uses the signed-in user's JWT. */
 app.post('/push/test', async (c) => {
-  const jwt = /^Bearer\s+(\S+)$/i.exec(c.req.header('authorization') ?? '')?.[1];
-  const { data: auth } = jwt ? await admin.auth.getUser(jwt) : { data: { user: null } };
-  if (!auth.user) return c.text('Sign in first.', 401);
-  const { data: subs } = await admin.from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', auth.user.id);
+  const userId = await sessionUser(c);
+  if (!userId) return c.text('Sign in first.', 401);
+  const { data: subs } = await admin.from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', userId);
   const results = await Promise.all(
     (subs ?? []).map((s) =>
       sendPush(s as PushTarget, { title: 'Reminders are on', body: 'Timed tasks will notify you here.', url: '/', tag: 'test' }, VAPID).catch(() => 0),
@@ -236,6 +243,19 @@ app.post('/push/test', async (c) => {
   const gone = (subs ?? []).filter((_, i) => results[i] === 404 || results[i] === 410).map((s) => s.endpoint);
   if (gone.length) await admin.from('push_subscriptions').delete().in('endpoint', gone);
   return c.json({ devices: results.filter((s) => s > 0 && s < 300).length });
+});
+
+/** Title, description and image for a link preview card. Signed-in users only, so it isn't an open proxy. */
+app.get('/link/preview', async (c) => {
+  if (!(await sessionUser(c))) return c.text('Sign in first.', 401);
+  const url = c.req.query('url') ?? '';
+  if (!/^https?:\/\//i.test(url)) return c.text('Not a link.', 400);
+  try {
+    return c.json(await fetchPreview(url), 200, { 'cache-control': 'private, max-age=3600' });
+  } catch (e) {
+    console.warn('preview failed', String(e).slice(0, 120));
+    return c.json({ url, finalUrl: url, title: null, description: null, image: null, site: null, icon: null });
+  }
 });
 
 app.get('/health', (c) => c.text('ok'));

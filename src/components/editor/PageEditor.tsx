@@ -11,8 +11,15 @@ import { LineBehavior } from './extensions/lineBehavior';
 import { SlashCommand } from './extensions/slashCommand';
 import { PageMention } from './extensions/pageMention';
 import { SubPage } from './extensions/subPage';
+import { PageImage } from './extensions/image';
+import { Bookmark, Embed } from './extensions/linkBlocks';
+import { LinkPaste, type PastedLink } from './extensions/linkPaste';
+import { insertImageFiles, insertLinkBlock } from './extensions/media';
 import { ChipContext } from './chipContext';
 import { MobileToolbar } from './MobileToolbar';
+import { PasteLinkMenu } from './PasteLinkMenu';
+import { PromptDialog } from '@/components/notes/PromptDialog';
+import { canEmbed, soleUrl } from '@/lib/embeds';
 import {
   EMPTY_JOT_DOC,
   EMPTY_PAGE_DOC,
@@ -134,6 +141,10 @@ function EditorInner({
   const listsRef = useRef(lists);
   listsRef.current = lists;
   const chipKey = useRef(docTaskIds(initialDoc).sort().join(','));
+  const container = useRef<HTMLDivElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [pasted, setPasted] = useState<PastedLink | null>(null);
+  const [linkPrompt, setLinkPrompt] = useState<'bookmark' | 'embed' | null>(null);
 
   const ensureTarget = useCallback(async () => {
     if (target.current) return target.current;
@@ -282,6 +293,18 @@ function EditorInner({
     [ensureTarget],
   );
 
+  const onImage = useCallback((e: Editor, range: Range) => {
+    e.chain().focus().deleteRange(range).run();
+    fileInput.current?.click();
+  }, []);
+
+  const onLinkBlock = useCallback((e: Editor, range: Range, kind: 'bookmark' | 'embed') => {
+    e.chain().focus().deleteRange(range).run();
+    setLinkPrompt(kind);
+  }, []);
+
+  const closePasted = useCallback(() => setPasted(null), []);
+
   const editor = useEditor({
     immediatelyRender: true,
     extensions: [
@@ -303,9 +326,13 @@ function EditorInner({
       TaskItem.configure({ nested: true }),
       TaskLine,
       LineBehavior.configure({ jotMode: mode === 'jot' }),
-      SlashCommand.configure({ jotMode: mode === 'jot', onSubPage }),
+      SlashCommand.configure({ jotMode: mode === 'jot', onSubPage, onImage, onLinkBlock }),
       PageMention,
       SubPage,
+      PageImage,
+      Bookmark,
+      Embed,
+      LinkPaste.configure({ onPaste: setPasted }),
     ],
     content: initialDoc,
     autofocus: autoFocus && mode === 'jot' ? 'end' : false,
@@ -452,7 +479,7 @@ function EditorInner({
 
   return (
     <ChipContext.Provider value={chips}>
-      <div className={cn('relative', className)}>
+      <div ref={container} className={cn('relative', className)}>
         {conflict && (
           <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
             <span>This page changed on another device.</span>
@@ -479,7 +506,38 @@ function EditorInner({
         <EditorContent editor={editor} className={cn('editor-root', mode === 'jot' && 'is-jot')} />
 
         <SaveIndicator status={status} />
-        {editor && <MobileToolbar editor={editor} jotMode={mode === 'jot'} />}
+        {editor && (
+          <>
+            <MobileToolbar editor={editor} jotMode={mode === 'jot'} onImage={() => fileInput.current?.click()} />
+            <PasteLinkMenu editor={editor} pasted={pasted} container={container} onClose={closePasted} />
+          </>
+        )}
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(e) => {
+            if (editor && e.target.files) insertImageFiles(editor, [...e.target.files]);
+            e.target.value = '';
+          }}
+        />
+        <PromptDialog
+          open={linkPrompt !== null}
+          title={linkPrompt === 'embed' ? 'Embed a link' : 'Link preview'}
+          placeholder={linkPrompt === 'embed' ? 'YouTube, Maps, Spotify, Figma… link' : 'https://'}
+          confirm="Add"
+          onOpenChange={(open) => !open && setLinkPrompt(null)}
+          onSubmit={(value) => {
+            const url = soleUrl(value) ?? (value.includes('.') ? soleUrl(`https://${value}`) : null);
+            if (!editor || !linkPrompt) return;
+            if (!url) return void toast.error("That doesn't look like a link");
+            const kind = linkPrompt === 'embed' && !canEmbed(url) ? 'bookmark' : linkPrompt;
+            if (kind !== linkPrompt) toast("That site can't be embedded, so it's a preview card instead");
+            insertLinkBlock(editor, kind, url);
+          }}
+        />
       </div>
     </ChipContext.Provider>
   );

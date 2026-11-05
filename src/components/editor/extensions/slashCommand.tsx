@@ -6,13 +6,16 @@ import {
   CheckCircle2,
   Code2,
   FileText,
+  Globe,
   Heading1,
   Heading2,
   Heading3,
+  ImagePlus,
   List,
   ListChecks,
   ListOrdered,
   Minus,
+  PlaySquare,
   Quote,
   SeparatorHorizontal,
 } from 'lucide-react';
@@ -26,6 +29,8 @@ export interface SlashItem extends MenuItem {
 export interface SlashOptions {
   jotMode: boolean;
   onSubPage: (editor: Editor, range: Range) => void;
+  onImage: (editor: Editor, range: Range) => void;
+  onLinkBlock: (editor: Editor, range: Range, kind: 'bookmark' | 'embed') => void;
 }
 
 const ic = 'h-4 w-4';
@@ -127,6 +132,27 @@ function buildItems(opts: SlashOptions): SlashItem[] {
       run: (e, r) => opts.onSubPage(e, r),
     },
     {
+      key: 'image',
+      label: 'Image',
+      keywords: 'photo picture screenshot upload',
+      icon: <ImagePlus className={ic} />,
+      run: (e, r) => opts.onImage(e, r),
+    },
+    {
+      key: 'bookmark',
+      label: 'Link preview',
+      keywords: 'bookmark card url web',
+      icon: <Globe className={ic} />,
+      run: (e, r) => opts.onLinkBlock(e, r, 'bookmark'),
+    },
+    {
+      key: 'embed',
+      label: 'Embed',
+      keywords: 'youtube video map spotify figma loom docs vimeo music',
+      icon: <PlaySquare className={ic} />,
+      run: (e, r) => opts.onLinkBlock(e, r, 'embed'),
+    },
+    {
       key: 'link',
       label: 'Link to page',
       hint: '@',
@@ -147,7 +173,7 @@ export const SlashCommand = Extension.create<SlashOptions>({
   name: 'slashCommand',
 
   addOptions() {
-    return { jotMode: false, onSubPage: () => {} };
+    return { jotMode: false, onSubPage: () => {}, onImage: () => {}, onLinkBlock: () => {} };
   },
 
   addProseMirrorPlugins() {

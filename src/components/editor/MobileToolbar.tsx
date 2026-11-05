@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Heading2,
+  ImagePlus,
   IndentDecrease,
   IndentIncrease,
   Italic,
@@ -25,7 +26,7 @@ const coarse = () => typeof window !== 'undefined' && window.matchMedia('(pointe
  * layout viewport, which the keyboard does not shrink, so the offset comes from
  * visualViewport.
  */
-export function MobileToolbar({ editor, jotMode }: { editor: Editor; jotMode: boolean }) {
+export function MobileToolbar({ editor, jotMode, onImage }: { editor: Editor; jotMode: boolean; onImage: () => void }) {
   const [focused, setFocused] = useState(false);
   const [bottom, setBottom] = useState(0);
   const [, force] = useState(0);
@@ -129,6 +130,9 @@ export function MobileToolbar({ editor, jotMode }: { editor: Editor; jotMode: bo
         )}
         <Tool label="Link a page" onClick={run(() => editor.chain().focus().insertContent('@').run())}>
           <AtSign />
+        </Tool>
+        <Tool label="Add image" onClick={run(onImage)}>
+          <ImagePlus />
         </Tool>
         <Divider />
         <Tool label="Undo" disabled={!editor.can().undo()} onClick={run(() => editor.chain().focus().undo().run())}>
