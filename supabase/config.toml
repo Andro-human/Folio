@@ -1,4 +1,4 @@
-project_id = "note-taker"
+project_id = "folio"
 
 [functions.api]
 # The function authenticates callers itself: personal API tokens, not Supabase JWTs.
