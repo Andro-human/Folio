@@ -314,22 +314,18 @@ POST /internal/gcal-sync      DB webhook on tasks insert/update/delete
 
 ### MCP server
 
-- **Pattern:** MT-Wallet's `chatMcp.ts`, which is the official `@modelcontextprotocol/sdk`, `McpServer` + `StreamableHTTPServerTransport`, `sessionIdGenerator: undefined`, a new server per POST, and GET/DELETE → 405. This fits serverless exactly.
-- **Tools:**
-  - `create_note(title, markdown?, folder?, parent_page?)`
-  - `append_to_note(page, markdown)`
-  - `append_to_jot(markdown, date?)` · `read_jots(from, to)` (e.g. "summarise my week")
-  - `create_task(title, list?, priority?, deadline?, remind_at?, rrule?, notes_markdown?)`
-  - `update_task(page, …fields)` · `complete_task(page)`
-  - `list_tasks(view: today|upcoming|list|deferred, list?)`
-  - `search(query)` → titles + snippets
-  - `read_page(page)` → markdown
-- **Page lookup:** a `page` argument accepts an id or a title, matched fuzzily.
-- **Markdown ↔ TipTap JSON:** assistants speak markdown, but pages store TipTap JSON, so the function needs conversion both ways. **Spike this early** (TipTap's markdown extension vs. a small custom converter for the node types used).
-- **Clients:**
-  - Claude: web/desktop/mobile custom connector.
-  - ChatGPT: connector / developer mode.
-  - Gemini: unclear whether the consumer app supports custom MCP; verify, don't promise.
+- **Shape:** `@modelcontextprotocol/sdk` `McpServer` with `WebStandardStreamableHTTPServerTransport` (web `Request`/`Response`, fits Deno), stateless: `sessionIdGenerator: undefined`, JSON responses, a new server per POST, GET/DELETE → 405. Code: `supabase/functions/api/mcp.ts`, pure helpers in `assist.ts`.
+- **Auth:** an `mcp`-scoped token per app (Settings → AI assistants). claude.ai and ChatGPT take `/api/mcp/<token>`; Claude Code sends `Authorization: Bearer <token>` to `/api/mcp`.
+- **Tools** (nothing deletes):
+  - `get_overview` — today, timezone, lists, folders, counts.
+  - Tasks: `list_tasks(view)`, `create_task`, `update_task`, `complete_task` (repeats move to the next occurrence). New tasks also land in today's jot.
+  - Pages: `search` (full-text, falls back to contains), `read_page` (markdown, live task status), `create_note`, `append_to_note`.
+  - Jots: `read_jots(from, to)`, `append_to_jot` (time-stamped).
+  - Schedule: `list_schedule`, `add_schedule_item`, `skip_schedule_day`.
+- **Lookup:** a `page`/`task`/`item` argument takes an id or a title (exact, then contains); ambiguity returns the candidates.
+- **Markdown ↔ TipTap JSON:** `markdown.ts`, built on `marked`'s lexer. Folio blocks read as `- [ ]` task lines, `[[Sub-page]]`, `[image]`, links for cards and embeds. Search text matches the app's `docToText`.
+- **Concurrency:** appends retry on the page `version`, so an open editor gets the "changed on another device" banner rather than losing text.
+- **Clients:** Claude (web/desktop/mobile custom connector), ChatGPT (developer mode connector), Claude Code (`claude mcp add --transport http`). Gemini: unverified.
 
 ### Reminders (web push)
 
@@ -394,7 +390,7 @@ Each phase is usable on its own. **Switch over after phase 2.**
 | 3 | **Quick + offline capture** | Capture sheet, IndexedDB outbox, offline state |
 | 4 | **Siri** | `api_tokens`, `/capture` with LLM parse + fallback, the three Shortcuts |
 | 5 | **Reminders** | Push subscription, `/internal/tick` via pg_cron, notification deep links. **Schedule**: timetable with per-item alerts |
-| 6 | **MCP** | Markdown ↔ TipTap spike first, then tools, connect Claude + ChatGPT |
+| 6 | **MCP** | Markdown ↔ TipTap, 14 tools incl. schedule, connect Claude, ChatGPT and Claude Code |
 | 7 | **Google Calendar** | Connect flow, Tasks calendar write-sync, events in Today/Upcoming |
 | 8 | **Polish** | 8 am daily digest push, images, snooze, settings, performance pass |
 

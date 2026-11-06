@@ -5,6 +5,7 @@ import { PageBody, PageHeader, ScreenTitle, SectionTitle } from '@/components/la
 import { PromptDialog } from '@/components/notes/PromptDialog';
 import { RemindersSection } from '@/components/settings/RemindersSection';
 import { ShortcutsSection } from '@/components/settings/ShortcutsSection';
+import { AssistantsSection } from '@/components/settings/AssistantsSection';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme, type ThemePreference } from '@/hooks/useTheme';
 import { useCreateList, useDeleteList, useLists, useUpdateList, listColorVar, LIST_COLORS } from '@/data/lists';
@@ -97,6 +98,7 @@ export default function SettingsPage() {
         <RemindersSection />
 
         <ShortcutsSection />
+        <AssistantsSection />
 
         <section className="mb-9">
           <SectionTitle>Account</SectionTitle>

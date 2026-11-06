@@ -5,6 +5,8 @@ import { basicParse, deadlineUtc, modelParse, readModelFields, type ListRef, typ
 import { clock, describeDeadline, describeLead, jotTitle, zoned } from './time.ts';
 import { sendPush, type PushTarget } from './webpush.ts';
 import { fetchPreview } from './unfurl.ts';
+import { buildServer } from './mcp.ts';
+import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 
 // Service role: every query below must filter by the user id resolved from the token.
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
@@ -29,7 +31,7 @@ app.use('/link/*', appCors);
 
 /** The signed-in app user, from their Supabase session JWT. */
 async function sessionUser(c: Context): Promise<string | null> {
-  const jwt = /^Bearer\s+(\S+)$/i.exec(c.req.header('authorization') ?? '')?.[1];
+  const jwt = bearer(c);
   if (!jwt) return null;
   const { data } = await admin.auth.getUser(jwt);
   return data.user?.id ?? null;
@@ -40,14 +42,15 @@ async function sha256Hex(s: string): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Bearer header only — tokens never travel in URLs or query strings, and are never logged. */
-async function userFor(c: Context, scope: 'capture' | 'mcp'): Promise<string | null> {
-  const m = /^Bearer\s+(\S+)$/i.exec(c.req.header('authorization') ?? '');
-  if (!m) return null;
+const bearer = (c: Context) => /^Bearer\s+(\S+)$/i.exec(c.req.header('authorization') ?? '')?.[1] ?? null;
+
+/** The token's owner, if it's live and has this scope. Tokens are never logged. */
+async function userForToken(token: string | null, scope: 'capture' | 'mcp'): Promise<string | null> {
+  if (!token) return null;
   const { data } = await admin
     .from('api_tokens')
     .select('id, user_id')
-    .eq('token_hash', await sha256Hex(m[1]))
+    .eq('token_hash', await sha256Hex(token))
     .eq('scope', scope)
     .is('revoked_at', null)
     .maybeSingle();
@@ -55,6 +58,9 @@ async function userFor(c: Context, scope: 'capture' | 'mcp'): Promise<string | n
   await admin.from('api_tokens').update({ last_used_at: new Date().toISOString() }).eq('id', data.id);
   return data.user_id;
 }
+
+/** Capture takes the token in the Authorization header only. */
+const userFor = (c: Context, scope: 'capture' | 'mcp') => userForToken(bearer(c), scope);
 
 async function readBody(c: Context): Promise<{ text: string; kind?: 'task' | 'note'; fields: ModelFields | null }> {
   const type = c.req.header('content-type') ?? '';
@@ -257,6 +263,25 @@ app.get('/link/preview', async (c) => {
     return c.json({ url, finalUrl: url, title: null, description: null, image: null, site: null, icon: null });
   }
 });
+
+/**
+ * MCP over Streamable HTTP, stateless: a fresh server per POST. claude.ai and ChatGPT connectors
+ * can only take a URL, so they use /mcp/<token> (an MCP-scoped token, useless for /capture);
+ * Claude Code sends the token as a Bearer header to /mcp.
+ */
+async function mcp(c: Context, token: string | null) {
+  const userId = await userForToken(token, 'mcp');
+  if (!userId) {
+    return c.json({ jsonrpc: '2.0', error: { code: -32001, message: 'That Folio link or token isn’t valid. Make a new one in Settings → AI assistants.' }, id: null }, 401);
+  }
+  const server = buildServer(admin, userId);
+  const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+  await server.connect(transport);
+  return transport.handleRequest(c.req.raw);
+}
+app.post('/mcp', (c) => mcp(c, bearer(c)));
+app.post('/mcp/:token', (c) => mcp(c, c.req.param('token')));
+app.on(['GET', 'DELETE'], ['/mcp', '/mcp/:token'], (c) => c.text('Method not allowed', 405));
 
 app.get('/health', (c) => c.text('ok'));
 

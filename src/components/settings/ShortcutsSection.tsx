@@ -87,7 +87,7 @@ export function ShortcutsSection() {
   );
 }
 
-function CopyField({ label, value }: { label: string; value: string }) {
+export function CopyField({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div>
@@ -108,7 +108,7 @@ function CopyField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Step({ n, children }: { n: number; children: React.ReactNode }) {
+export function Step({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <li className="flex gap-3">
       <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
@@ -119,7 +119,7 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
   );
 }
 
-const B = ({ children }: { children: React.ReactNode }) => <span className="font-semibold">{children}</span>;
+export const B = ({ children }: { children: React.ReactNode }) => <span className="font-semibold">{children}</span>;
 
 /** For the Shortcut's "Use Model" step. Dates stay as spoken words; the server resolves them in your timezone. */
 function modelPrompt(lists: string[]): string {
