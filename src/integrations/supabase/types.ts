@@ -304,35 +304,6 @@ export type Database = {
           },
         ]
       }
-      task_completions: {
-        Row: {
-          completed_at: string
-          id: string
-          page_id: string
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string
-          id?: string
-          page_id: string
-          user_id?: string
-        }
-        Update: {
-          completed_at?: string
-          id?: string
-          page_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "task_completions_page_id_fkey"
-            columns: ["page_id"]
-            isOneToOne: false
-            referencedRelation: "pages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -362,6 +333,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      task_completions: {
+        Row: {
+          completed_at: string
+          id: string
+          page_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          page_id: string
+          user_id?: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          page_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_completions_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
@@ -437,6 +437,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      capture_note: {
+        Args: {
+          p_capture_id: string
+          p_jot_date: string
+          p_jot_title: string
+          p_text: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      capture_task: {
+        Args: {
+          p_deadline: string
+          p_deadline_has_time: boolean
+          p_id: string
+          p_jot_date: string
+          p_jot_title: string
+          p_list_id: string
+          p_priority: Database["public"]["Enums"]["task_priority"]
+          p_rrule: string
+          p_title: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       claim_due_events: {
         Args: never
         Returns: {
@@ -445,6 +470,16 @@ export type Database = {
           end_time: string
           event_id: string
           start_time: string
+          title: string
+          user_id: string
+        }[]
+      }
+      claim_due_reminders: {
+        Args: never
+        Returns: {
+          deadline: string
+          deadline_has_time: boolean
+          page_id: string
           title: string
           user_id: string
         }[]
@@ -472,8 +507,31 @@ export type Database = {
         }
         Returns: undefined
       }
+      event_next_alert: {
+        Args: {
+          after: string
+          e: Database["public"]["Tables"]["events"]["Row"]
+        }
+        Returns: string
+      }
+      jot_append: {
+        Args: {
+          p_jot_date: string
+          p_jot_title: string
+          p_line: Json
+          p_line_text: string
+          p_link_id?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       register_push: {
-        Args: { p_auth: string; p_endpoint: string; p_p256dh: string; p_user_agent: string }
+        Args: {
+          p_auth: string
+          p_endpoint: string
+          p_p256dh: string
+          p_user_agent: string
+        }
         Returns: undefined
       }
       rename_page: {
@@ -636,6 +694,7 @@ export const Constants = {
     Enums: {
       task_priority: ["high", "medium", "low"],
       task_status: ["todo", "deferred", "done"],
+      token_scope: ["capture", "mcp"],
     },
   },
 } as const
