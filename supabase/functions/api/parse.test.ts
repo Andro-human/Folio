@@ -67,6 +67,31 @@ describe('basicParse (server, zone-aware)', () => {
     expect(basicParse('gym tomorrow 6am', 'task', lists, now, tz).time).toBe('06:00');
   });
 
+  it('understands Siri dictation: spelled-out times and spoken list/priority', () => {
+    expect(basicParse('Call the bank tomorrow at five Work important.', 'task', lists, now, tz)).toMatchObject({
+      title: 'Call the bank', listId: 'w', priority: 'high', date: '2026-10-20', time: '17:00',
+    });
+    expect(basicParse('call the bank, tomorrow at 5, work, important', 'task', lists, now, tz)).toMatchObject({
+      title: 'call the bank', listId: 'w', priority: 'high', time: '17:00',
+    });
+    expect(basicParse('buy stamps errands list low priority friday at half past ten', 'task', lists, now, tz)).toMatchObject({
+      title: 'buy stamps', listId: 'e', priority: 'low', date: '2026-10-23', time: '10:30',
+    });
+    expect(basicParse('dentist on the personal list tomorrow at nine thirty am', 'task', lists, now, tz)).toMatchObject({
+      title: 'dentist', listId: 'p', date: '2026-10-20', time: '09:30',
+    });
+    expect(basicParse('book flights high priority', 'task', lists, now, tz)).toMatchObject({ title: 'book flights', priority: 'high' });
+  });
+
+  it('leaves list words that are part of the task alone', () => {
+    const c = basicParse('go to work early tomorrow', 'task', lists, now, tz);
+    expect(c.title).toBe('go to work early');
+    expect(basicParse('drive to work', 'task', lists, now, tz)).toMatchObject({ title: 'drive to work' });
+    expect(basicParse('drive to work', 'task', lists, now, tz).listId).toBeUndefined();
+    expect(basicParse('send important documents', 'task', lists, now, tz).priority).toBeUndefined();
+    expect(basicParse('work', 'task', lists, now, tz).title).toBe('work');
+  });
+
   it('passes notes through untouched', () => {
     expect(basicParse('idea: tomorrow is a good day', 'note', lists, now, tz)).toMatchObject({
       kind: 'note',

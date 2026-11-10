@@ -31,6 +31,69 @@ const REPEAT_RE = /\bevery\s+(day|weekday|week|month|year|monday|tuesday|wednesd
 // Spoken lead-ins that aren't part of the task.
 const FILLER_RE = /^\s*(?:(?:please|hey)\s+)?(?:remind me to|remember to|i need to|i have to|i should|don'?t forget to|add (?:a )?(?:task|todo|to-do)(?: to)?|new task|todo|to-do)\b[\s:,-]*/i;
 
+// Dictation spells small numbers out ("at five"), which chrono doesn't read as a time.
+const HOURS: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+};
+const HOUR_WORD = `(${Object.keys(HOURS).join('|')})`;
+const MINUTES: Record<string, string> = { fifteen: '15', thirty: '30', 'forty five': '45', 'forty-five': '45' };
+
+export function spokenTimes(text: string): string {
+  return text
+    .replace(new RegExp(`\\bhalf past ${HOUR_WORD}\\b`, 'gi'), (_, h: string) => `${HOURS[h.toLowerCase()]}:30`)
+    .replace(new RegExp(`\\bquarter past ${HOUR_WORD}\\b`, 'gi'), (_, h: string) => `${HOURS[h.toLowerCase()]}:15`)
+    .replace(
+      new RegExp(`\\b(at|by|around|before|after|until) ${HOUR_WORD}(?:\\s+(o'?clock|fifteen|thirty|forty[\\s-]five))?\\b`, 'gi'),
+      (_, lead: string, h: string, m?: string) => {
+        const min = m && !/o'?clock/i.test(m) ? MINUTES[m.toLowerCase().replace(/\s+/, ' ')] : null;
+        return `${lead} ${HOURS[h.toLowerCase()]}${min ? `:${min}` : ''}`;
+      },
+    )
+    .replace(new RegExp(`\\b${HOUR_WORD}\\s+(a\\.?m\\.?|p\\.?m\\.?)`, 'gi'), (_, h: string, ap: string) => `${HOURS[h.toLowerCase()]} ${ap}`);
+}
+
+const SPOKEN_PRIORITY: [RegExp, Priority][] = [
+  [/[\s,]+(?:(?:high|top)[\s-]+priority|priority[\s-]+(?:high|one)|important|urgent)[\s,]*$/i, 'high'],
+  [/[\s,]+(?:(?:medium|normal)[\s-]+priority|priority[\s-]+(?:medium|two))[\s,]*$/i, 'medium'],
+  [/[\s,]+(?:low[\s-]+priority|priority[\s-]+(?:low|three)|not urgent)[\s,]*$/i, 'low'],
+];
+// A bare list name at the end only counts when it isn't the object of a word like these ("go to work").
+const NOT_A_TAG = new Set(['to', 'at', 'from', 'for', 'in', 'into', 'of', 'the', 'my', 'a', 'an', 'with', 'about', 'on', 'off', 'after', 'before']);
+
+/** Peels spoken tags off the end: "call the bank work important" → list Work, high priority. */
+function spokenTags(text: string, out: Capture, lists: ListRef[]): string {
+  for (let changed = true; changed; ) {
+    changed = false;
+    if (!out.priority) {
+      for (const [re, p] of SPOKEN_PRIORITY) {
+        if (re.test(text)) {
+          text = text.replace(re, ' ');
+          out.priority = p;
+          changed = true;
+          break;
+        }
+      }
+    }
+    if (out.listId) continue;
+    const named = text.match(/[\s,]+(?:(?:in|on|to|for|under)\s+(?:the\s+|my\s+)?)?([\p{L}\p{N}_-]+)\s+list[\s,]*$/iu);
+    const namedId = named && matchList(named[1], lists);
+    if (named && namedId) {
+      out.listId = namedId;
+      text = text.slice(0, named.index) + ' ';
+      changed = true;
+      continue;
+    }
+    const bare = text.match(/(\S+)[\s,]+([\p{L}\p{N}_-]+)[\s,]*$/u);
+    const bareList = bare && lists.find((l) => l.name.toLowerCase() === bare[2].toLowerCase());
+    if (bare && bareList && !NOT_A_TAG.has(bare[1].toLowerCase().replace(/[,.]$/, ''))) {
+      out.listId = bareList.id;
+      text = text.slice(0, bare.index! + bare[1].length) + ' ';
+      changed = true;
+    }
+  }
+  return text;
+}
+
 const pad = (n: number) => String(n).padStart(2, '0');
 const squash = (s: string) => s.replace(/\s{2,}/g, ' ').trim();
 
@@ -48,7 +111,7 @@ export function basicParse(input: string, kind: 'task' | 'note', lists: ListRef[
 
   const local: Zoned = zoned(now, tz);
   const out: Capture = { kind, title: '', parser: 'basic' };
-  let text = ` ${input.replace(FILLER_RE, '')} `;
+  let text = ` ${spokenTimes(input.replace(FILLER_RE, '').replace(/[.?!]+\s*$/, ''))} `;
 
   text = text.replace(/(^|\s)(![a-z0-9]+)(?=\s)/gi, (whole, lead: string, tok: string) => {
     const p = PRIORITY[tok.toLowerCase()];
@@ -85,6 +148,8 @@ export function basicParse(input: string, kind: 'task' | 'note', lists: ListRef[
     text = text.replace(/\s(by|on|at|due)\s*$/i, ' ');
   }
 
+  text = spokenTags(text, out, lists);
+
   if (repeatWord) {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     if (days.includes(repeatWord)) {
@@ -100,7 +165,7 @@ export function basicParse(input: string, kind: 'task' | 'note', lists: ListRef[
     }
   }
 
-  out.title = squash(text) || squash(input);
+  out.title = squash(text).replace(/[\s,;:–-]+$/, '') || squash(input);
   return out;
 }
 
