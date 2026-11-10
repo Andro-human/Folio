@@ -6,6 +6,7 @@ import { clock, describeDeadline, describeLead, jotTitle, zoned } from './time.t
 import { sendPush, type PushTarget } from './webpush.ts';
 import { fetchPreview } from './unfurl.ts';
 import { buildServer } from './mcp.ts';
+import { bucketOf, occursOn, spokenDay, type ScheduleItem } from './assist.ts';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 
 // Service role: every query below must filter by the user id resolved from the token.
@@ -141,6 +142,42 @@ app.post('/capture', async (c) => {
   ].filter(Boolean);
   return c.text(`Added: ${capture.title}${bits.length ? ` — ${bits.join(', ')}` : ''}.`);
 });
+
+/** "Hey Siri, what's on today": a sentence for the Shortcut to speak. Same token as /capture; reads only. */
+async function today(c: Context) {
+  const userId = await userFor(c, 'capture');
+  if (!userId) return c.text('That token isn’t valid. Make a new one in the app’s Settings.', 401);
+  const [{ data: profile }, { data: events }, { data: tasks }] = await Promise.all([
+    admin.from('profiles').select('timezone').eq('user_id', userId).maybeSingle(),
+    admin.from('events').select('*').eq('user_id', userId),
+    admin
+      .from('tasks')
+      .select('deadline, deadline_has_time, page:pages!inner(title, deleted_at)')
+      .eq('user_id', userId)
+      .eq('status', 'todo')
+      .not('deadline', 'is', null)
+      .is('page.deleted_at', null),
+  ]);
+  const tz = profile?.timezone ?? 'Asia/Kolkata';
+  const now = new Date();
+  const local = zoned(now, tz);
+  const [h, m] = local.time.split(':').map(Number);
+  const due: { title: string; at: number | null }[] = [];
+  const overdue: string[] = [];
+  for (const t of (tasks ?? []) as unknown as { deadline: string; deadline_has_time: boolean; page: { title: string } }[]) {
+    const bucket = bucketOf(t.deadline, t.deadline_has_time, now, tz);
+    const title = t.page.title || 'an untitled task';
+    if (bucket === 'overdue') overdue.push(title);
+    else if (bucket === 'today') {
+      const at = zoned(new Date(t.deadline), tz).time.split(':').map(Number);
+      due.push({ title, at: t.deadline_has_time ? at[0] * 60 + at[1] : null });
+    }
+  }
+  const schedule = ((events ?? []) as ScheduleItem[]).filter((e) => occursOn(e, local.date));
+  return c.text(spokenDay(schedule, h * 60 + m, due, overdue));
+}
+app.get('/today', today);
+app.post('/today', today);
 
 interface DueReminder {
   page_id: string;

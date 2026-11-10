@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bucketOf, describeDays, describeRule, nextOccurrence, occursOn, parseClock, parseDays, snippet, timeRange, type ScheduleItem } from './assist.ts';
+import { bucketOf, describeDays, describeRule, nextOccurrence, occursOn, parseClock, parseDays, snippet, spokenDay, spokenTime, timeRange, type ScheduleItem } from './assist.ts';
 
 const tz = 'Asia/Kolkata';
 // Fri 6 Nov 2026, 17:00 IST
@@ -74,5 +74,28 @@ describe('snippet', () => {
     expect(s.startsWith('…')).toBe(true);
     expect(s).toContain('the passport is in the drawer');
     expect(snippet('short note', 'zzz')).toBe('short note');
+  });
+});
+
+describe('spokenDay', () => {
+  const block = (title: string, start: string, end: string): ScheduleItem => ({
+    id: title, title, start_time: start, end_time: end, on_date: '2026-11-10', days: null, starts_on: '2026-11-10', ends_on: null, skip_dates: [], alert_minutes: 10,
+  });
+  const routine = [block('Focus work', '10:00:00', '14:00:00'), block('Morning routine', '09:00:00', '10:00:00'), block('Rest', '14:00:00', '15:00:00')];
+
+  it('says what is on now, what is next, and the tasks', () => {
+    expect(spokenDay(routine, 11 * 60, [{ title: 'pay rent', at: null }, { title: 'call the bank', at: 17 * 60 + 30 }], ['renew passport'])).toBe(
+      'Right now: Focus work, until 2 pm. Then: Rest at 2 pm. Due today: call the bank at 5:30 pm and pay rent. One overdue: renew passport.',
+    );
+  });
+
+  it('handles the morning, the evening and an empty day', () => {
+    expect(spokenDay(routine, 8 * 60, [], [])).toBe('Next: Morning routine at 9 am, Focus work at 10 am and Rest at 2 pm. No tasks due today.');
+    expect(spokenDay(routine, 20 * 60, [], ['a', 'b', 'c'])).toBe('Your schedule is done for today. No tasks due today. 3 overdue, including a and b.');
+    expect(spokenDay([], 12 * 60, [], [])).toBe('Nothing on your schedule today. No tasks due today.');
+  });
+
+  it('speaks times naturally', () => {
+    expect([spokenTime(540), spokenTime(570), spokenTime(720), spokenTime(1440)]).toEqual(['9 am', '9:30 am', '12 pm', 'midnight']);
   });
 });

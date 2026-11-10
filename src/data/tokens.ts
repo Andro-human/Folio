@@ -3,6 +3,7 @@ import { queryClient, supabase, unwrap } from './client';
 
 export const CAPTURE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api/capture`;
 export const MCP_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api/mcp`;
+export const TODAY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api/today`;
 
 const tokensKey = ['tokens'] as const;
 

@@ -149,3 +149,48 @@ export function snippet(text: string, query: string, width = 160): string {
   const start = Math.max(0, hit - Math.floor(width / 3));
   return (start > 0 ? '…' : '') + flat.slice(start, start + width) + (start + width < flat.length ? '…' : '');
 }
+
+// ---------------------------------------------------------------- "What's on today" (Siri)
+
+/** 540 → "9 am", 570 → "9:30 am", 720 → "12 pm", 1440 → "midnight": how Siri should say it. */
+export function spokenTime(min: number): string {
+  if (min === 0 || min === 1440) return 'midnight';
+  const h = Math.floor(min / 60) % 24;
+  const m = min % 60;
+  return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''} ${h < 12 ? 'am' : 'pm'}`;
+}
+
+const andList = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+
+export interface SpokenTask {
+  title: string;
+  /** Minutes from midnight when it's due at a time today. */
+  at: number | null;
+}
+
+/** A short paragraph for Siri: what's left on today's schedule, then tasks due today and overdue. */
+export function spokenDay(schedule: ScheduleItem[], now: number, today: SpokenTask[], overdue: string[]): string {
+  const parts: string[] = [];
+  const blocks = schedule
+    .map((e) => ({ title: e.title, start: toMinutes(e.start_time), end: toMinutes(e.end_time) }))
+    .sort((a, b) => a.start - b.start);
+  const current = blocks.find((b) => b.start <= now && now < b.end);
+  const next = blocks.filter((b) => b.start > now);
+  if (!blocks.length) parts.push('Nothing on your schedule today.');
+  else if (!current && !next.length) parts.push('Your schedule is done for today.');
+  else {
+    if (current) parts.push(`Right now: ${current.title}, until ${spokenTime(current.end)}.`);
+    if (next.length) parts.push(`${current ? 'Then' : 'Next'}: ${andList(next.slice(0, 4).map((b) => `${b.title} at ${spokenTime(b.start)}`))}${next.length > 4 ? `, and ${next.length - 4} more` : ''}.`);
+  }
+
+  if (today.length) {
+    const named = [...today]
+      .sort((a, b) => (a.at ?? 9999) - (b.at ?? 9999))
+      .slice(0, 5)
+      .map((t) => (t.at === null ? t.title : `${t.title} at ${spokenTime(t.at)}`));
+    parts.push(`Due today: ${andList(named)}${today.length > 5 ? `, and ${today.length - 5} more` : ''}.`);
+  } else parts.push('No tasks due today.');
+  if (overdue.length === 1) parts.push(`One overdue: ${overdue[0]}.`);
+  else if (overdue.length > 1) parts.push(`${overdue.length} overdue, including ${andList(overdue.slice(0, 2))}.`);
+  return parts.join(' ');
+}
