@@ -1,6 +1,7 @@
 import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 import { createClient } from '@supabase/supabase-js';
+import { aiSplit, checkSplit } from './ai.ts';
 import { basicParse, deadlineUtc, modelParse, readModelFields, type ListRef, type ModelFields } from './parse.ts';
 import { clock, describeDeadline, describeLead, jotTitle, zoned } from './time.ts';
 import { sendPush, type PushTarget } from './webpush.ts';
@@ -100,9 +101,13 @@ app.post('/capture', async (c) => {
   const now = new Date();
   const local = zoned(now, tz);
 
-  // The model's split is optional: without it (or if it came back garbled) the phrase is parsed as typed.
-  const capture =
-    kind !== 'note' && fields ? modelParse(fields, listRefs, now, tz) : basicParse(text, kind ?? 'task', listRefs, now, tz);
+  // Tasks are split by Gemini (or fields an older Shortcut sent); dates are always resolved here. If the model is
+  // slow, down or returns junk, the phrase is parsed by the rules instead.
+  let split = kind === 'note' ? null : fields;
+  if (kind !== 'note' && !split) {
+    split = checkSplit(readModelFields(await aiSplit(text, listRefs.map((l) => l.name), Deno.env.get('GEMINI_API_KEY'))), text);
+  }
+  const capture = split ? modelParse(split, listRefs, now, tz) : basicParse(text, kind ?? 'task', listRefs, now, tz);
 
   const id = crypto.randomUUID();
   const title = jotTitle(local.date);
