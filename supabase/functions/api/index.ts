@@ -105,7 +105,7 @@ app.post('/capture', async (c) => {
   // slow, down or returns junk, the phrase is parsed by the rules instead.
   let split = kind === 'note' ? null : fields;
   if (kind !== 'note' && !split) {
-    split = checkSplit(readModelFields(await aiSplit(text, listRefs.map((l) => l.name), Deno.env.get('GEMINI_API_KEY'))), text);
+    split = checkSplit(readModelFields(await aiSplit(text, listRefs.map((l) => l.name), Deno.env.get('GEMINI_API_KEY'))), text, listRefs);
   }
   const capture = split ? modelParse(split, listRefs, now, tz) : basicParse(text, kind ?? 'task', listRefs, now, tz);
 

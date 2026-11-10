@@ -57,38 +57,49 @@ const SPOKEN_PRIORITY: [RegExp, Priority][] = [
   [/[\s,]+(?:(?:medium|normal)[\s-]+priority|priority[\s-]+(?:medium|two))[\s,]*$/i, 'medium'],
   [/[\s,]+(?:low[\s-]+priority|priority[\s-]+(?:low|three)|not urgent)[\s,]*$/i, 'low'],
 ];
-// A bare list name at the end only counts when it isn't the object of a word like these ("go to work").
-const NOT_A_TAG = new Set(['to', 'at', 'from', 'for', 'in', 'into', 'of', 'the', 'my', 'a', 'an', 'with', 'about', 'on', 'off', 'after', 'before']);
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const PREP = String.raw`(?:in|into|on|to|under|for)\s+(?:the\s+|my\s+)?`;
 
-/** Peels spoken tags off the end: "call the bank work important" → list Work, high priority. */
+/**
+ * Words that file a task into a list: "work list", "in the work category", "put it in work", "#work". Saying the
+ * list's name isn't enough ("leave for work" is a personal task), so a bare name never counts.
+ */
+function filingPattern(name: string): RegExp {
+  const n = esc(name).replace(/\s+/g, String.raw`\s+`);
+  return new RegExp(
+    String.raw`(^|[\s,])(?:(?:put|file|add|move|save)\s+(?:it\s+|this\s+|that\s+)?${PREP}${n}(?:\s+(?:list|category))?` +
+      String.raw`|(?:${PREP})?${n}\s+(?:list|category)|(?:list|category)\s+${n}|#${n})(?=$|[\s,.!?])`,
+    'iu',
+  );
+}
+
+/** The list the speaker explicitly filed the task into, and the words that did it. */
+export function filedList(text: string, lists: ListRef[]): { list: ListRef; index: number; length: number } | undefined {
+  for (const list of [...lists].sort((a, b) => b.name.length - a.name.length)) {
+    const m = text.match(filingPattern(list.name));
+    if (m) return { list, index: m.index! + m[1].length, length: m[0].length - m[1].length };
+  }
+  return undefined;
+}
+
+/** Peels a spoken priority off the end and an explicit filing from anywhere: "call the bank work list important". */
 function spokenTags(text: string, out: Capture, lists: ListRef[]): string {
-  for (let changed = true; changed; ) {
+  if (!out.listId) {
+    const filed = filedList(text, lists);
+    if (filed) {
+      out.listId = filed.list.id;
+      text = text.slice(0, filed.index) + ' ' + text.slice(filed.index + filed.length);
+    }
+  }
+  for (let changed = true; changed && !out.priority; ) {
     changed = false;
-    if (!out.priority) {
-      for (const [re, p] of SPOKEN_PRIORITY) {
-        if (re.test(text)) {
-          text = text.replace(re, ' ');
-          out.priority = p;
-          changed = true;
-          break;
-        }
+    for (const [re, p] of SPOKEN_PRIORITY) {
+      if (re.test(text)) {
+        text = text.replace(re, ' ');
+        out.priority = p;
+        changed = true;
+        break;
       }
-    }
-    if (out.listId) continue;
-    const named = text.match(/[\s,]+(?:(?:in|on|to|for|under)\s+(?:the\s+|my\s+)?)?([\p{L}\p{N}_-]+)\s+list[\s,]*$/iu);
-    const namedId = named && matchList(named[1], lists);
-    if (named && namedId) {
-      out.listId = namedId;
-      text = text.slice(0, named.index) + ' ';
-      changed = true;
-      continue;
-    }
-    const bare = text.match(/(\S+)[\s,]+([\p{L}\p{N}_-]+)[\s,]*$/u);
-    const bareList = bare && lists.find((l) => l.name.toLowerCase() === bare[2].toLowerCase());
-    if (bare && bareList && !NOT_A_TAG.has(bare[1].toLowerCase().replace(/[,.]$/, ''))) {
-      out.listId = bareList.id;
-      text = text.slice(0, bare.index! + bare[1].length) + ' ';
-      changed = true;
     }
   }
   return text;

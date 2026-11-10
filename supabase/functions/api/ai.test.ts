@@ -21,9 +21,9 @@ describe('Gemini split', () => {
   });
 
   it('feeds the split into the zone-aware date logic', async () => {
-    const raw = await aiSplit('oh and for work I really need to call the bank tomorrow at five, urgent', ['Personal', 'Work'], 'k',
+    const raw = await aiSplit('oh and I really need to call the bank tomorrow at five, urgent, work list', ['Personal', 'Work'], 'k',
       reply({ title: 'call the bank', when: 'tomorrow at five', list: 'Work', priority: 'high', repeat: null }));
-    const c = modelParse(readModelFields(raw)!, lists, now, 'Asia/Kolkata');
+    const c = modelParse(checkSplit(readModelFields(raw), 'call the bank tomorrow at five work list', lists)!, lists, now, 'Asia/Kolkata');
     expect(c).toMatchObject({ title: 'call the bank', listId: 'w', priority: 'high', date: '2026-10-20', time: '17:00' });
   });
 
@@ -41,8 +41,9 @@ describe('Gemini split', () => {
   });
 
   it('drops a list the speaker never named', () => {
-    expect(checkSplit({ title: 'water the plants', list: 'Personal' }, 'water the plants every monday')).toEqual({ title: 'water the plants', list: null });
-    expect(checkSplit({ title: 'call the bank', list: 'Work' }, 'for work call the bank')).toEqual({ title: 'call the bank', list: 'Work' });
-    expect(checkSplit({ title: 'Totally new', list: null }, 'call the bank')).toBeNull();
+    expect(checkSplit({ title: 'water the plants', list: 'Personal' }, 'water the plants every monday', lists)).toEqual({ title: 'water the plants', list: null });
+    expect(checkSplit({ title: 'Leave for work', list: 'Work' }, 'Leave for work at 9', lists)).toEqual({ title: 'Leave for work', list: null });
+    expect(checkSplit({ title: 'call the bank', list: null }, 'call the bank, work list', lists)).toEqual({ title: 'call the bank', list: 'Work' });
+    expect(checkSplit({ title: 'Totally new', list: null }, 'call the bank', lists)).toBeNull();
   });
 });
